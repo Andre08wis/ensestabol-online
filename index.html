@@ -3,18 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EncestaBol Online - Supabase</title>
+  <title>EncestaBol Online - Sin Registro</title>
   <style>
     * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
     body { background: #1a1a2e; color: #fff; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding-bottom: 30px; }
     header { margin-top: 20px; text-align: center; }
     .card { background: #16213e; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); width: 90%; max-width: 400px; text-align: center; margin-top: 20px; }
-    input { width: 100%; padding: 12px; margin: 8px 0; border: none; border-radius: 6px; background: #0f3460; color: white; }
+    input { width: 100%; padding: 12px; margin: 8px 0; border: none; border-radius: 6px; background: #0f3460; color: white; text-align: center; }
     button { width: 100%; padding: 12px; background: #2ecc71; border: none; color: white; font-weight: bold; border-radius: 6px; cursor: pointer; margin-top: 10px; transition: 0.2s; }
     button:hover { background: #27ae60; }
     .hidden { display: none; }
     
-    /* Cancha de juego */
     #court { position: relative; width: 300px; height: 350px; background: #0f3460; border: 3px solid #2ecc71; border-radius: 10px; margin: 15px auto; overflow: hidden; }
     .cartuchera { position: absolute; width: 80px; height: 30px; background: #ff9f43; border: 2px solid #fff; border-radius: 6px; left: 110px; text-align: center; line-height: 30px; font-size: 12px; font-weight: bold; }
     #cartuchera-p1 { top: 10px; }
@@ -22,13 +21,11 @@
     .ball { position: absolute; width: 20px; height: 20px; background: #e74c3c; border-radius: 50%; left: 140px; transition: top 0.4s ease-out; }
     .stats { display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: bold; }
 
-    /* Tabla Leaderboard */
     table { width: 100%; margin-top: 10px; border-collapse: collapse; text-align: left; }
     th, td { padding: 8px; border-bottom: 1px solid #0f3460; font-size: 14px; }
     th { color: #f1c40f; }
   </style>
 
-  <!-- Supabase JS Client -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -38,27 +35,20 @@
     <p>Distancia: 3 Pies | 1 vs 1</p>
   </header>
 
-  <!-- Login / Registro -->
-  <div id="auth-card" class="card">
-    <h2>Cuenta de Supabase</h2>
-    <input type="email" id="email" placeholder="Correo electrónico">
-    <input type="password" id="password" placeholder="Contraseña">
-    <button id="btn-login">Iniciar Sesión</button>
-    <button id="btn-signup" style="background: #0f3460;">Crear Cuenta</button>
+  <!-- Paso 1: Ingresar Apodo -->
+  <div id="setup-card" class="card">
+    <h2>Ingresa tu Apodo</h2>
+    <input type="text" id="username" placeholder="Ej. Carlos123" maxlength="12">
+    <button id="btn-start">Entrar a Jugar</button>
   </div>
 
-  <!-- Panel del Juego -->
+  <!-- Paso 2: Juego -->
   <div id="game-card" class="card hidden">
     <div class="stats">
       <span>Jugador: <span id="user-display">---</span></span>
       <span>Puntos: <span id="user-score">0</span></span>
     </div>
-    
-    <button id="btn-logout" style="background: #e74c3c; padding: 6px; font-size: 12px;">Cerrar Sesión</button>
-    <hr style="border-color: #0f3460; margin: 15px 0;">
 
-    <h3>Lanza a la Cartuchera</h3>
-    
     <div id="court">
       <div id="cartuchera-p1" class="cartuchera">Rival</div>
       <div id="ball" class="ball" style="top: 300px;"></div>
@@ -68,7 +58,6 @@
     <button id="btn-throw">🚀 Lanzar Pelota</button>
     <p id="game-status" style="margin-top: 10px; color: #f1c40f;"></p>
 
-    <!-- Tabla Top 5 -->
     <hr style="border-color: #0f3460; margin: 20px 0;">
     <h3>🏆 Top 5 Mejores Jugadores</h3>
     <table>
@@ -80,150 +69,106 @@
         </tr>
       </thead>
       <tbody id="leaderboard-body">
-        <tr><td colspan="3">Cargando ranking...</td></tr>
+        <tr><td colspan="3">Cargando...</td></tr>
       </tbody>
     </table>
   </div>
 
   <script>
-    // ⚠️ REEMPLAZA CON TUS CREDENCIALES DE SUPABASE
     const SUPABASE_URL = "https://TU_PROYECTO.supabase.co";
     const SUPABASE_ANON_KEY = "TU_SUPABASE_ANON_KEY";
 
     const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // Elementos DOM
-    const authCard = document.getElementById('auth-card');
+    const setupCard = document.getElementById('setup-card');
     const gameCard = document.getElementById('game-card');
-    const emailInput = document.getElementById('email');
-    const passInput = document.getElementById('password');
+    const usernameInput = document.getElementById('username');
     const userDisplay = document.getElementById('user-display');
     const userScore = document.getElementById('user-score');
     const gameStatus = document.getElementById('game-status');
     const ball = document.getElementById('ball');
     const leaderboardBody = document.getElementById('leaderboard-body');
 
-    let currentUser = null;
+    // Generar o recuperar un ID único guardado en la memoria del navegador
+    let deviceId = localStorage.getItem('encestabol_device_id');
+    if (!deviceId) {
+      deviceId = 'user_' + Math.random().toString(36).substring(2, 9);
+      localStorage.setItem('encestabol_device_id', deviceId);
+    }
+
+    let currentUsername = localStorage.getItem('encestabol_username') || '';
     let score = 0;
 
-    // Crear cuenta
-    document.getElementById('btn-signup').onclick = async () => {
-      const email = emailInput.value;
-      const password = passInput.value;
-      if (!email || !password) return alert("Llena los campos");
-      
-      const { data, error } = await supabase.auth.signUp({ email, password });
-      if (error) alert(error.message);
-      else alert("Cuenta creada con éxito. Inicia sesión.");
+    // Autologin si ya ingresó su apodo previamente
+    if (currentUsername) {
+      iniciarJuego();
+    }
+
+    document.getElementById('btn-start').onclick = () => {
+      const inputVal = usernameInput.value.trim();
+      if (!inputVal) return alert("Escribe un apodo para jugar");
+      currentUsername = inputVal;
+      localStorage.setItem('encestabol_username', currentUsername);
+      iniciarJuego();
     };
 
-    // Iniciar sesión
-    document.getElementById('btn-login').onclick = async () => {
-      const email = emailInput.value;
-      const password = passInput.value;
-      if (!email || !password) return alert("Llena los campos");
+    async function iniciarJuego() {
+      setupCard.classList.add('hidden');
+      gameCard.classList.remove('hidden');
+      userDisplay.innerText = currentUsername;
 
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) alert(error.message);
-    };
-
-    // Cerrar sesión
-    document.getElementById('btn-logout').onclick = async () => {
-      await supabase.auth.signOut();
-    };
-
-    // Estado del usuario
-    supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session) {
-        currentUser = session.user;
-        authCard.classList.add('hidden');
-        gameCard.classList.remove('hidden');
-        userDisplay.innerText = currentUser.email.split('@')[0];
-        
-        await cargarOcrearPerfil(currentUser);
-        await obtenerLeaderboard();
-      } else {
-        currentUser = null;
-        authCard.classList.remove('hidden');
-        gameCard.classList.add('hidden');
-      }
-    });
-
-    // Obtener o Crear registro del usuario en la base de datos
-    async function cargarOcrearPerfil(user) {
-      const { data, error } = await supabase
+      // Cargar o crear perfil en Supabase usando el deviceId
+      const { data } = await supabase
         .from('profiles')
         .select('score')
-        .eq('id', user.id)
+        .eq('id', deviceId)
         .maybeSingle();
 
       if (data) {
         score = data.score || 0;
+        await supabase.from('profiles').update({ name: currentUsername }).eq('id', deviceId);
       } else {
-        // Crear el perfil si no existe
-        const username = user.email.split('@')[0];
-        await supabase.from('profiles').insert([{ id: user.id, email: username, score: 0 }]);
+        await supabase.from('profiles').insert([{ id: deviceId, name: currentUsername, score: 0 }]);
         score = 0;
       }
+
       userScore.innerText = score;
+      obtenerLeaderboard();
     }
 
-    // Cargar la Tabla de Posiciones
     async function obtenerLeaderboard() {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('profiles')
-        .select('email, score')
+        .select('name, score')
         .order('score', { ascending: false })
         .limit(5);
 
-      if (error) {
-        console.error("Error al cargar la tabla:", error);
-        return;
-      }
-
       leaderboardBody.innerHTML = '';
       if (data && data.length > 0) {
-        data.forEach((jugador, index) => {
-          const row = `
-            <tr>
-              <td>${index + 1}</td>
-              <td>${jugador.email || 'Anónimo'}</td>
-              <td>${jugador.score} pts</td>
-            </tr>
-          `;
-          leaderboardBody.innerHTML += row;
+        data.forEach((j, i) => {
+          leaderboardBody.innerHTML += `<tr><td>${i + 1}</td><td>${j.name || 'Anónimo'}</td><td>${j.score} pts</td></tr>`;
         });
       } else {
-        leaderboardBody.innerHTML = '<tr><td colspan="3">Sin datos aún</td></tr>';
+        leaderboardBody.innerHTML = '<tr><td colspan="3">Sin datos</td></tr>';
       }
     }
 
-    // Lanzar pelota
     document.getElementById('btn-throw').onclick = () => {
       ball.style.top = '300px';
-      
       setTimeout(() => { ball.style.top = '20px'; }, 50);
 
       setTimeout(async () => {
-        const hit = Math.random() > 0.4; // 60% probabilidad de encestar
+        const hit = Math.random() > 0.4;
         if (hit) {
           score += 1;
           userScore.innerText = score;
           gameStatus.innerText = "¡ENCESTASTE! 🎯 +1 Punto";
           
-          if (currentUser) {
-            await supabase
-              .from('profiles')
-              .update({ score: score })
-              .eq('id', currentUser.id);
-              
-            // Actualizar el ranking
-            obtenerLeaderboard();
-          }
+          await supabase.from('profiles').update({ score: score, name: currentUsername }).eq('id', deviceId);
+          obtenerLeaderboard();
         } else {
           gameStatus.innerText = "¡Fallaste! Inténtalo de nuevo.";
         }
-        
         setTimeout(() => { ball.style.top = '300px'; }, 800);
       }, 400);
     };
