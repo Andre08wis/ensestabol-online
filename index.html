@@ -3,246 +3,278 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EncestaBol Online - Multiplayer, Chat & Ranking</title>
+  <title>EncestaBol 3D Pool Style</title>
   <style>
     * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-    body { background: #1a1a2e; color: #fff; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding-bottom: 30px; }
-    header { margin-top: 15px; text-align: center; }
-    .card { background: #16213e; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); width: 90%; max-width: 420px; text-align: center; margin-top: 15px; }
-    input { width: 100%; padding: 10px; margin: 5px 0; border: none; border-radius: 6px; background: #0f3460; color: white; text-align: center; }
-    button { width: 100%; padding: 12px; background: #2ecc71; border: none; color: white; font-weight: bold; border-radius: 6px; cursor: pointer; margin-top: 8px; transition: 0.2s; }
-    button:hover { background: #27ae60; }
+    body { background: #0f172a; color: #fff; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding-bottom: 20px; }
+    header { text-align: center; margin-top: 10px; }
+    .card { background: #1e293b; padding: 15px; border-radius: 12px; width: 95%; max-width: 420px; text-align: center; margin-top: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+    input, select { width: 100%; padding: 10px; margin: 5px 0; border-radius: 6px; border: none; background: #334155; color: #fff; text-align: center; }
+    button { width: 100%; padding: 10px; background: #22c55e; border: none; color: #fff; font-weight: bold; border-radius: 6px; cursor: pointer; margin-top: 6px; }
+    button:disabled { background: #475569; cursor: not-allowed; }
     .hidden { display: none; }
-    
-    /* Cancha de juego */
-    #court { position: relative; width: 300px; height: 300px; background: #0f3460; border: 3px solid #2ecc71; border-radius: 10px; margin: 15px auto; overflow: hidden; }
-    .cartuchera { position: absolute; width: 90px; height: 35px; background: #ff9f43; border: 2px solid #fff; border-radius: 6px; left: 105px; text-align: center; line-height: 35px; font-size: 11px; font-weight: bold; color: #000; }
-    #cartuchera-p1 { top: 10px; }
-    .ball { position: absolute; width: 22px; height: 22px; background: #e74c3c; border-radius: 50%; left: 139px; transition: top 0.4s ease-out; }
-    
-    .stats { display: flex; justify-content: space-between; font-weight: bold; background: #0f3460; padding: 10px; border-radius: 8px; }
-    
-    /* Chat Box */
-    #chat-box { height: 100px; background: #0f3460; border-radius: 6px; overflow-y: auto; text-align: left; padding: 8px; font-size: 13px; margin-top: 10px; }
-    .chat-msg { margin-bottom: 4px; }
-    .chat-msg span { font-weight: bold; color: #f1c40f; }
 
-    /* Ranking */
-    table { width: 100%; margin-top: 8px; border-collapse: collapse; text-align: left; }
-    th, td { padding: 6px; border-bottom: 1px solid #0f3460; font-size: 13px; }
-    th { color: #f1c40f; }
+    /* Cancha Estilo Billar */
+    #court { position: relative; width: 320px; height: 320px; background: #065f46; border: 8px solid #b45309; border-radius: 12px; margin: 10px auto; overflow: hidden; cursor: crosshair; }
+    .cartuchera { position: absolute; width: 70px; height: 35px; background: #d97706; border: 2px solid #fff; border-radius: 6px; left: 125px; top: 15px; text-align: center; line-height: 35px; font-size: 11px; font-weight: bold; }
+    .ball { position: absolute; width: 22px; height: 22px; border-radius: 50%; left: 149px; top: 250px; background: #ef4444; box-shadow: inset -2px -2px 5px rgba(0,0,0,0.5); }
+    
+    /* Flecha Apuntadora */
+    #aim-line { position: absolute; height: 2px; background: #facc15; transform-origin: 0 50%; display: none; pointer-events: none; }
+
+    /* HUD */
+    .hud { display: flex; justify-content: space-between; background: #334155; padding: 8px 12px; border-radius: 8px; font-weight: bold; font-size: 14px; }
+    .power-bar-bg { width: 100%; height: 12px; background: #334155; border-radius: 6px; margin: 8px 0; overflow: hidden; }
+    #power-bar { width: 0%; height: 100%; background: linear-gradient(90deg, #22c55e, #ef4444); }
+
+    /* Chat & Tienda */
+    #chat-box { height: 60px; background: #0f172a; border-radius: 6px; overflow-y: auto; text-align: left; padding: 5px; font-size: 12px; margin-top: 8px; }
+    .shop-grid { display: flex; justify-content: space-around; margin: 8px 0; }
+    .shop-item { border: 2px solid #334155; padding: 6px; border-radius: 8px; width: 30%; cursor: pointer; }
+    .shop-item.active { border-color: #facc15; }
   </style>
-
-  <!-- PeerJS para Multijugador P2P Real -->
   <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 </head>
 <body>
 
   <header>
-    <h1>🏀 EncestaBol Online</h1>
-    <p>Distancia: 3 Pies | 1vs1 Realtime</p>
-    <button id="btn-music" style="width: auto; padding: 5px 15px; background: #9b59b6; font-size: 12px;">🎵 Música: OFF</button>
+    <h1>🏀 EncestaBol 8-Ball</h1>
+    <p>¡El primero en llegar a 5 Gana! 💵 $<span id="user-coins">100</span></p>
+    <button id="btn-music" style="width:auto; padding:4px 10px; font-size:11px; background:#8b5cf6;">🎵 Música: OFF</button>
   </header>
 
-  <!-- Paso 1: Conexión Multiplayer -->
+  <!-- Login/Sala -->
   <div id="setup-card" class="card">
-    <h2>Sala Multijugador</h2>
+    <h2>Entrar al Torneo</h2>
     <input type="text" id="username" placeholder="Tu Apodo">
     
-    <button id="btn-host" style="background: #e67e22;">Crear Sala (Host)</button>
-    <p id="host-id-display" style="font-size: 12px; color: #f1c40f; word-break: break-all;"></p>
-    
-    <hr style="border-color: #0f3460; margin: 15px 0;">
-    
-    <input type="text" id="join-id" placeholder="Pegar ID de Sala del Rival">
+    <h3>Skins Disponibles</h3>
+    <div class="shop-grid">
+      <div class="shop-item active" onclick="buySkin('red', 0, this)">🔴 Clásica<br>Gratis</div>
+      <div class="shop-item" onclick="buySkin('gold', 50, this)">🟡 Oro<br>$50</div>
+      <div class="shop-item" onclick="buySkin('neon', 100, this)">🟢 Neón<br>$100</div>
+    </div>
+
+    <button id="btn-host" style="background:#f59e0b;">Crear Sala ($20 Apuesta)</button>
+    <p id="host-id" style="font-size:11px; color:#facc15; word-break:break-all;"></p>
+    <input type="text" id="join-id" placeholder="ID de Sala del Rival">
     <button id="btn-join">Unirse a Sala</button>
   </div>
 
-  <!-- Paso 2: Pantalla de Juego -->
+  <!-- Juego Pool Style -->
   <div id="game-card" class="card hidden">
-    <div class="stats">
-      <span id="p1-display">Tú: 0</span>
-      <span id="p2-display">Rival: 0</span>
+    <div class="hud">
+      <span id="p1-txt">Tú: 0/5</span>
+      <span id="turn-txt" style="color:#facc15;">Tu Turno</span>
+      <span id="p2-txt">Rival: 0/5</span>
     </div>
 
     <div id="court">
-      <div id="cartuchera-p1" class="cartuchera">🎒 Cartuchera</div>
-      <div id="ball" class="ball" style="top: 250px;"></div>
+      <div class="cartuchera">🎒 Cartuchera</div>
+      <div id="aim-line"></div>
+      <div id="ball" class="ball"></div>
     </div>
 
-    <button id="btn-throw">🚀 Lanzar Pelota</button>
-    <p id="game-status" style="margin-top: 5px; color: #f1c40f; font-size: 13px;"></p>
+    <p style="font-size:11px; margin:2px;">Mantén presionado en la cancha para apuntar y cargar potencia</p>
+    <div class="power-bar-bg"><div id="power-bar"></div></div>
+
+    <button id="btn-shoot" disabled>🎯 ¡DISPARAR!</button>
+    <p id="game-status" style="color:#facc15; font-size:12px; height:15px; margin:4px 0;"></p>
 
     <!-- Chat -->
     <div id="chat-box"></div>
-    <div style="display: flex; gap: 5px;">
-      <input type="text" id="chat-input" placeholder="Escribe un mensaje..." style="width: 75%;">
-      <button id="btn-send" style="width: 25%; margin-top: 5px;">Enviar</button>
+    <div style="display:flex; gap:4px; margin-top:4px;">
+      <input type="text" id="chat-input" placeholder="Mensaje..." style="margin:0;">
+      <button id="btn-send" style="width:30%; margin:0;">Enviar</button>
     </div>
-
-    <!-- Ranking Local -->
-    <hr style="border-color: #0f3460; margin: 15px 0;">
-    <h3>🏆 Ranking Local</h3>
-    <table>
-      <thead>
-        <tr><th>#</th><th>Jugador</th><th>Puntos</th></tr>
-      </thead>
-      <tbody id="leaderboard-body"></tbody>
-    </table>
   </div>
 
   <script>
-    let peer = null;
-    let conn = null;
+    // Variables de Estado y Dinero
+    let coins = parseInt(localStorage.getItem('eb_coins') || '100');
+    let skin = 'red';
+    let myScore = 0, oppScore = 0;
+    let isMyTurn = false;
+    let isCharging = false;
+    let power = 0, angle = 0;
+    let powerInterval = null;
+    let peer = null, conn = null;
     let username = '';
-    let myScore = 0;
-    let opponentScore = 0;
-    let isMyTurn = true;
 
-    // Audio retro generado por Web Audio API
-    let audioCtx = null;
-    let isMusicPlaying = false;
-    let musicInterval = null;
+    document.getElementById('user-coins').innerText = coins;
 
-    function play8BitMusic() {
-      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      const notes = [261.63, 329.63, 392.00, 523.25, 392.00, 329.63];
-      let i = 0;
-      musicInterval = setInterval(() => {
-        if (!isMusicPlaying) return;
-        let osc = audioCtx.createOscillator();
-        let gain = audioCtx.createGain();
-        osc.type = 'square';
-        osc.frequency.setValueAtTime(notes[i % notes.length], audioCtx.currentTime);
-        gain.gain.setValueAtTime(0.03, audioCtx.currentTime);
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.15);
-        i++;
-      }, 250);
-    }
-
+    // Música Sintetizada
+    let audioCtx = null, isMusic = false, musicInt = null;
     document.getElementById('btn-music').onclick = () => {
-      isMusicPlaying = !isMusicPlaying;
-      document.getElementById('btn-music').innerText = isMusicPlaying ? "🎵 Música: ON" : "🎵 Música: OFF";
-      if (isMusicPlaying) play8BitMusic();
-      else clearInterval(musicInterval);
+      isMusic = !isMusic;
+      document.getElementById('btn-music').innerText = isMusic ? "🎵 Música: ON" : "🎵 Música: OFF";
+      if (isMusic) {
+        if (!audioCtx) audioCtx = new AudioContext();
+        const notes = [220, 277, 329, 440]; let i = 0;
+        musicInt = setInterval(() => {
+          let osc = audioCtx.createOscillator(), g = audioCtx.createGain();
+          osc.frequency.value = notes[i++ % notes.length];
+          g.gain.value = 0.02; osc.connect(g); g.connect(audioCtx.destination);
+          osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+        }, 300);
+      } else clearInterval(musicInt);
     };
 
-    // Inicializar PeerJS
-    document.getElementById('btn-host').onclick = () => {
-      username = document.getElementById('username').value.trim() || 'Jugador 1';
-      peer = new Peer();
-      peer.on('open', (id) => {
-        document.getElementById('host-id-display').innerText = "Comparte este ID con tu rival:\n" + id;
-      });
-      peer.on('connection', (c) => {
-        conn = c;
-        setupConnection();
-      });
-    };
-
-    document.getElementById('btn-join').onclick = () => {
-      username = document.getElementById('username').value.trim() || 'Jugador 2';
-      const joinId = document.getElementById('join-id').value.trim();
-      if (!joinId) return alert("Pega el ID de la sala");
-      
-      peer = new Peer();
-      peer.on('open', () => {
-        conn = peer.connect(joinId);
-        setupConnection();
-      });
-    };
-
-    function setupConnection() {
-      document.getElementById('setup-card').classList.add('hidden');
-      document.getElementById('game-card').classList.remove('hidden');
-
-      conn.on('open', () => {
-        conn.send({ type: 'JOIN', name: username });
-      });
-
-      conn.on('data', (data) => {
-        if (data.type === 'CHAT') {
-          addChatMessage(data.name, data.msg);
-        } else if (data.type === 'THROW') {
-          handleOpponentThrow(data.hit, data.score);
-        }
-      });
-
-      updateRanking();
+    // Tienda de Skins
+    function buySkin(type, cost, el) {
+      if (coins < cost) return alert("No tienes suficiente dinero");
+      skin = type;
+      document.querySelectorAll('.shop-item').forEach(i => i.classList.remove('active'));
+      el.classList.add('active');
     }
 
-    // Chat
-    document.getElementById('btn-send').onclick = sendChat;
-    document.getElementById('chat-input').onkeypress = (e) => { if(e.key === 'Enter') sendChat(); };
+    // Sistema de Apuntado estilo 8-Ball Pool
+    const court = document.getElementById('court');
+    const aimLine = document.getElementById('aim-line');
+    const ball = document.getElementById('ball');
 
-    function sendChat() {
-      const input = document.getElementById('chat-input');
-      const msg = input.value.trim();
-      if (!msg || !conn) return;
-      
-      addChatMessage("Tú", msg);
-      conn.send({ type: 'CHAT', name: username, msg: msg });
-      input.value = '';
+    court.addEventListener('mousedown', startAim);
+    court.addEventListener('mousemove', updateAim);
+    court.addEventListener('mouseup', endAim);
+
+    function startAim(e) {
+      if (!isMyTurn) return;
+      isCharging = true;
+      power = 0;
+      aimLine.style.display = 'block';
+      powerInterval = setInterval(() => {
+        if (power < 100) power += 3;
+        document.getElementById('power-bar').style.width = power + '%';
+      }, 30);
+      updateAim(e);
     }
 
-    function addChatMessage(author, msg) {
-      const box = document.getElementById('chat-box');
-      box.innerHTML += `<div class="chat-msg"><span>${author}:</span> ${msg}</div>`;
-      box.scrollTop = box.scrollHeight;
+    function updateAim(e) {
+      if (!isCharging) return;
+      const rect = court.getBoundingClientRect();
+      const dx = (e.clientX - rect.left) - 160;
+      const dy = (e.clientY - rect.top) - 261;
+      angle = Math.atan2(dy, dx);
+      
+      const len = 80;
+      aimLine.style.width = len + 'px';
+      aimLine.style.left = '160px';
+      aimLine.style.top = '261px';
+      aimLine.style.transform = `rotate(${angle}rad)`;
     }
 
-    // Lanzamiento
-    document.getElementById('btn-throw').onclick = () => {
-      if (!isMyTurn) return alert("Es el turno del rival");
-      
-      const ball = document.getElementById('ball');
-      ball.style.top = '250px';
-      setTimeout(() => { ball.style.top = '18px'; }, 50);
+    function endAim() {
+      if (!isCharging) return;
+      isCharging = false;
+      clearInterval(powerInterval);
+      document.getElementById('btn-shoot').disabled = false;
+    }
+
+    // Disparo sin Spam (Bloqueado hasta el siguiente turno)
+    document.getElementById('btn-shoot').onclick = () => {
+      if (!isMyTurn) return;
+      isMyTurn = false;
+      document.getElementById('btn-shoot').disabled = true;
+      aimLine.style.display = 'none';
+
+      // Física simulada
+      const hit = Math.abs(angle + 1.57) < 0.35 && power > 40 && power < 85;
+
+      ball.style.transition = 'all 0.5s ease-out';
+      ball.style.top = hit ? '20px' : '60px';
 
       setTimeout(() => {
-        const hit = Math.random() > 0.5;
         if (hit) {
           myScore++;
           document.getElementById('game-status').innerText = "¡ENCESTASTE! 🎯";
         } else {
-          document.getElementById('game-status').innerText = "¡Fallaste!";
+          document.getElementById('game-status').innerText = "¡FALLASTE!";
         }
 
-        document.getElementById('p1-display').innerText = `Tú: ${myScore}`;
-        conn.send({ type: 'THROW', hit: hit, score: myScore });
-        
-        saveScore(username, myScore);
-        updateRanking();
+        updateHUD();
+        conn.send({ type: 'SHOOT', score: myScore, hit: hit });
 
-        setTimeout(() => { ball.style.top = '250px'; }, 800);
-      }, 400);
+        // Verificación de Victoria (Llegar a 5)
+        if (myScore >= 5) {
+          coins += 40;
+          localStorage.setItem('eb_coins', coins);
+          alert("🏆 ¡VICTORIA! Ganaste la apuesta de $40");
+          location.reload();
+        }
+
+        setTimeout(() => {
+          ball.style.top = '250px';
+          document.getElementById('power-bar').style.width = '0%';
+        }, 800);
+      }, 500);
     };
 
-    function handleOpponentThrow(hit, score) {
-      opponentScore = score;
-      document.getElementById('p2-display').innerText = `Rival: ${opponentScore}`;
-      document.getElementById('game-status').innerText = hit ? "¡El rival encestó! 🎒" : "El rival falló el tiro";
-    }
-
-    // Guardado de Ranking Local
-    function saveScore(user, pts) {
-      let scores = JSON.parse(localStorage.getItem('encestabol_ranking') || '[]');
-      scores = scores.filter(s => s.name !== user);
-      scores.push({ name: user, score: pts });
-      scores.sort((a,b) => b.score - a.score);
-      localStorage.setItem('encestabol_ranking', JSON.stringify(scores.slice(0, 5)));
-    }
-
-    function updateRanking() {
-      const scores = JSON.parse(localStorage.getItem('encestabol_ranking') || '[]');
-      const body = document.getElementById('leaderboard-body');
-      body.innerHTML = '';
-      scores.forEach((s, i) => {
-        body.innerHTML += `<tr><td>${i+1}</td><td>${s.name}</td><td>${s.score} pts</td></tr>`;
+    // Red y Servidor P2P
+    document.getElementById('btn-host').onclick = () => {
+      username = document.getElementById('username').value || 'Jugador 1';
+      peer = new Peer();
+      peer.on('open', id => {
+        document.getElementById('host-id').innerText = "ID de Sala: " + id;
       });
+      peer.on('connection', c => { conn = c; isMyTurn = true; initGame(); });
+    };
+
+    document.getElementById('btn-join').onclick = () => {
+      username = document.getElementById('username').value || 'Jugador 2';
+      const id = document.getElementById('join-id').value;
+      peer = new Peer();
+      peer.on('open', () => {
+        conn = peer.connect(id);
+        isMyTurn = false;
+        initGame();
+      });
+    };
+
+    function initGame() {
+      document.getElementById('setup-card').classList.add('hidden');
+      document.getElementById('game-card').classList.remove('hidden');
+
+      conn.on('data', data => {
+        if (data.type === 'SHOOT') {
+          oppScore = data.score;
+          document.getElementById('game-status').innerText = data.hit ? "El rival encestó 🎒" : "El rival falló";
+          updateHUD();
+          
+          if (oppScore >= 5) {
+            coins -= 20;
+            localStorage.setItem('eb_coins', coins);
+            alert("❌ Derrota. El rival llegó a 5 puntos.");
+            location.reload();
+          }
+
+          isMyTurn = true;
+          document.getElementById('turn-txt').innerText = "Tu Turno";
+        } else if (data.type === 'CHAT') {
+          addChat(data.user, data.msg);
+        }
+      });
+      updateHUD();
+    }
+
+    function updateHUD() {
+      document.getElementById('p1-txt').innerText = `Tú: ${myScore}/5`;
+      document.getElementById('p2-txt').innerText = `Rival: ${oppScore}/5`;
+      document.getElementById('turn-txt').innerText = isMyTurn ? "Tu Turno" : "Esperando Rival...";
+    }
+
+    // Chat sin Anti-Spam
+    document.getElementById('btn-send').onclick = () => {
+      const msg = document.getElementById('chat-input').value;
+      if (!msg) return;
+      addChat("Tú", msg);
+      conn.send({ type: 'CHAT', user: username, msg: msg });
+      document.getElementById('chat-input').value = '';
+    };
+
+    function addChat(usr, msg) {
+      const box = document.getElementById('chat-box');
+      box.innerHTML += `<div><b>${usr}:</b> ${msg}</div>`;
+      box.scrollTop = box.scrollHeight;
     }
   </script>
 </body>
