@@ -3,35 +3,34 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EncestaBol 3D Pool Style</title>
+  <title>EncestaBol Pool 8 - 1v1</title>
   <style>
-    * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
     body { background: #0f172a; color: #fff; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding-bottom: 20px; }
     header { text-align: center; margin-top: 10px; }
     .card { background: #1e293b; padding: 15px; border-radius: 12px; width: 95%; max-width: 420px; text-align: center; margin-top: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
-    input, select { width: 100%; padding: 10px; margin: 5px 0; border-radius: 6px; border: none; background: #334155; color: #fff; text-align: center; }
+    input { width: 100%; padding: 10px; margin: 5px 0; border-radius: 6px; border: none; background: #334155; color: #fff; text-align: center; }
     button { width: 100%; padding: 10px; background: #22c55e; border: none; color: #fff; font-weight: bold; border-radius: 6px; cursor: pointer; margin-top: 6px; }
     button:disabled { background: #475569; cursor: not-allowed; }
     .hidden { display: none; }
 
-    /* Cancha Estilo Billar */
-    #court { position: relative; width: 320px; height: 320px; background: #065f46; border: 8px solid #b45309; border-radius: 12px; margin: 10px auto; overflow: hidden; cursor: crosshair; }
+    /* Cancha de Juego */
+    #court { position: relative; width: 320px; height: 320px; background: #065f46; border: 8px solid #b45309; border-radius: 12px; margin: 10px auto; overflow: hidden; touch-action: none; }
     .cartuchera { position: absolute; width: 70px; height: 35px; background: #d97706; border: 2px solid #fff; border-radius: 6px; left: 125px; top: 15px; text-align: center; line-height: 35px; font-size: 11px; font-weight: bold; }
     .ball { position: absolute; width: 22px; height: 22px; border-radius: 50%; left: 149px; top: 250px; background: #ef4444; box-shadow: inset -2px -2px 5px rgba(0,0,0,0.5); }
     
-    /* Flecha Apuntadora */
-    #aim-line { position: absolute; height: 2px; background: #facc15; transform-origin: 0 50%; display: none; pointer-events: none; }
+    #aim-line { position: absolute; height: 3px; background: #facc15; transform-origin: 0 50%; display: none; pointer-events: none; }
 
-    /* HUD */
     .hud { display: flex; justify-content: space-between; background: #334155; padding: 8px 12px; border-radius: 8px; font-weight: bold; font-size: 14px; }
     .power-bar-bg { width: 100%; height: 12px; background: #334155; border-radius: 6px; margin: 8px 0; overflow: hidden; }
     #power-bar { width: 0%; height: 100%; background: linear-gradient(90deg, #22c55e, #ef4444); }
 
-    /* Chat & Tienda */
     #chat-box { height: 60px; background: #0f172a; border-radius: 6px; overflow-y: auto; text-align: left; padding: 5px; font-size: 12px; margin-top: 8px; }
     .shop-grid { display: flex; justify-content: space-around; margin: 8px 0; }
-    .shop-item { border: 2px solid #334155; padding: 6px; border-radius: 8px; width: 30%; cursor: pointer; }
-    .shop-item.active { border-color: #facc15; }
+    .shop-item { border: 2px solid #334155; padding: 6px; border-radius: 8px; width: 30%; cursor: pointer; font-size: 11px; }
+    .shop-item.active { border-color: #facc15; background: #334155; }
+
+    #error-msg { color: #ef4444; font-size: 12px; min-height: 15px; margin: 2px 0; }
   </style>
   <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 </head>
@@ -39,29 +38,29 @@
 
   <header>
     <h1>🏀 EncestaBol 8-Ball</h1>
-    <p>¡El primero en llegar a 5 Gana! 💵 $<span id="user-coins">100</span></p>
+    <p>Monedas: 💵 $<span id="user-coins">100</span></p>
     <button id="btn-music" style="width:auto; padding:4px 10px; font-size:11px; background:#8b5cf6;">🎵 Música: OFF</button>
   </header>
 
-  <!-- Login/Sala -->
+  <!-- Menu Principal / Tienda -->
   <div id="setup-card" class="card">
-    <h2>Entrar al Torneo</h2>
+    <div id="error-msg"></div>
     <input type="text" id="username" placeholder="Tu Apodo">
     
-    <h3>Skins Disponibles</h3>
     <div class="shop-grid">
-      <div class="shop-item active" onclick="buySkin('red', 0, this)">🔴 Clásica<br>Gratis</div>
-      <div class="shop-item" onclick="buySkin('gold', 50, this)">🟡 Oro<br>$50</div>
-      <div class="shop-item" onclick="buySkin('neon', 100, this)">🟢 Neón<br>$100</div>
+      <div class="shop-item active" id="skin-red" onclick="selectSkin('red', 0)">🔴 Roja<br>Gratis</div>
+      <div class="shop-item" id="skin-gold" onclick="selectSkin('gold', 50)">🟡 Oro<br>$50</div>
+      <div class="shop-item" id="skin-neon" onclick="selectSkin('neon', 100)">🟢 Neón<br>$100</div>
     </div>
 
-    <button id="btn-host" style="background:#f59e0b;">Crear Sala ($20 Apuesta)</button>
-    <p id="host-id" style="font-size:11px; color:#facc15; word-break:break-all;"></p>
+    <button id="btn-host" style="background:#f59e0b;">Crear Sala (Apuesta $20)</button>
+    <p id="host-id" style="font-size:11px; color:#facc15; word-break:break-all; margin:4px 0;"></p>
+    
     <input type="text" id="join-id" placeholder="ID de Sala del Rival">
-    <button id="btn-join">Unirse a Sala</button>
+    <button id="btn-join">Unirse a Sala (Apuesta $20)</button>
   </div>
 
-  <!-- Juego Pool Style -->
+  <!-- Pantalla de Juego Pool -->
   <div id="game-card" class="card hidden">
     <div class="hud">
       <span id="p1-txt">Tú: 0/5</span>
@@ -75,24 +74,24 @@
       <div id="ball" class="ball"></div>
     </div>
 
-    <p style="font-size:11px; margin:2px;">Mantén presionado en la cancha para apuntar y cargar potencia</p>
     <div class="power-bar-bg"><div id="power-bar"></div></div>
 
-    <button id="btn-shoot" disabled>🎯 ¡DISPARAR!</button>
+    <button id="btn-shoot" disabled>🎯 DISPARAR</button>
     <p id="game-status" style="color:#facc15; font-size:12px; height:15px; margin:4px 0;"></p>
 
     <!-- Chat -->
     <div id="chat-box"></div>
     <div style="display:flex; gap:4px; margin-top:4px;">
-      <input type="text" id="chat-input" placeholder="Mensaje..." style="margin:0;">
+      <input type="text" id="chat-input" placeholder="Chat..." style="margin:0;">
       <button id="btn-send" style="width:30%; margin:0;">Enviar</button>
     </div>
   </div>
 
   <script>
-    // Variables de Estado y Dinero
+    // Sistema de Dinero Real
     let coins = parseInt(localStorage.getItem('eb_coins') || '100');
-    let skin = 'red';
+    let inventory = JSON.parse(localStorage.getItem('eb_inv') || '["red"]');
+    let selectedSkin = 'red';
     let myScore = 0, oppScore = 0;
     let isMyTurn = false;
     let isCharging = false;
@@ -101,7 +100,199 @@
     let peer = null, conn = null;
     let username = '';
 
-    document.getElementById('user-coins').innerText = coins;
+    function updateCoinsUI() {
+      document.getElementById('user-coins').innerText = coins;
+      localStorage.setItem('eb_coins', coins);
+    }
+    updateCoinsUI();
+
+    function showErr(m) {
+      document.getElementById('error-msg').innerText = m;
+      setTimeout(() => document.getElementById('error-msg').innerText = '', 3000);
+    }
+
+    // Tienda
+    function selectSkin(type, cost) {
+      if (!inventory.includes(type)) {
+        if (coins < cost) return showErr("No tienes dinero suficiente");
+        coins -= cost;
+        inventory.push(type);
+        localStorage.setItem('eb_inv', JSON.stringify(inventory));
+        updateCoinsUI();
+      }
+      selectedSkin = type;
+      document.querySelectorAll('.shop-item').forEach(i => i.classList.remove('active'));
+      document.getElementById('skin-' + type).classList.add('active');
+      
+      const colors = { red: '#ef4444', gold: '#facc15', neon: '#22c55e' };
+      document.getElementById('ball').style.background = colors[type];
+    }
+
+    // Apuntado con el Mouse / Pantalla táctil
+    const court = document.getElementById('court');
+    const aimLine = document.getElementById('aim-line');
+    const ball = document.getElementById('ball');
+
+    const handleStart = (e) => {
+      if (!isMyTurn) return;
+      isCharging = true;
+      power = 0;
+      aimLine.style.display = 'block';
+      powerInterval = setInterval(() => {
+        if (power < 100) power += 4;
+        document.getElementById('power-bar').style.width = power + '%';
+      }, 30);
+      handleMove(e);
+    };
+
+    const handleMove = (e) => {
+      if (!isCharging) return;
+      const rect = court.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      const dx = (clientX - rect.left) - 160;
+      const dy = (clientY - rect.top) - 261;
+      angle = Math.atan2(dy, dx);
+      
+      aimLine.style.width = '70px';
+      aimLine.style.left = '160px';
+      aimLine.style.top = '261px';
+      aimLine.style.transform = `rotate(${angle}rad)`;
+    };
+
+    const handleEnd = () => {
+      if (!isCharging) return;
+      isCharging = false;
+      clearInterval(powerInterval);
+      document.getElementById('btn-shoot').disabled = false;
+    };
+
+    court.addEventListener('mousedown', handleStart);
+    court.addEventListener('mousemove', handleMove);
+    window.addEventListener('mouseup', handleEnd);
+
+    court.addEventListener('touchstart', handleStart);
+    court.addEventListener('touchmove', handleMove);
+    window.addEventListener('touchend', handleEnd);
+
+    // Sistema de Tiro
+    document.getElementById('btn-shoot').onclick = () => {
+      if (!isMyTurn) return;
+      isMyTurn = false;
+      document.getElementById('btn-shoot').disabled = true;
+      aimLine.style.display = 'none';
+
+      // Cálculo de acierto
+      const hit = Math.abs(angle + 1.57) < 0.3 && power > 45 && power < 85;
+
+      ball.style.transition = 'all 0.4s ease-out';
+      ball.style.top = hit ? '20px' : '70px';
+
+      setTimeout(() => {
+        if (hit) {
+          myScore++;
+          document.getElementById('game-status').innerText = "¡ENCESTASTE!";
+        } else {
+          document.getElementById('game-status').innerText = "¡FALLASTE!";
+        }
+
+        updateHUD();
+        conn.send({ type: 'SHOOT', score: myScore, hit: hit });
+
+        // Condición de Victoria (Fin de partida)
+        if (myScore >= 5) {
+          coins += 40; // Devuelve apuesta + ganancia ($20 + $20)
+          updateCoinsUI();
+          document.getElementById('game-status').innerText = "🏆 ¡GANASTE EL JUEGO +$40!";
+          setTimeout(() => location.reload(), 2500);
+          return;
+        }
+
+        setTimeout(() => {
+          ball.style.top = '250px';
+          document.getElementById('power-bar').style.width = '0%';
+        }, 600);
+      }, 400);
+    };
+
+    // Conexión P2P (Reducir $20 al apostar)
+    document.getElementById('btn-host').onclick = () => {
+      if (coins < 20) return showErr("Necesitas $20 para apostar");
+      username = document.getElementById('username').value || 'Jugador 1';
+      
+      coins -= 20;
+      updateCoinsUI();
+
+      peer = new Peer();
+      peer.on('open', id => {
+        document.getElementById('host-id').innerText = "ID de Sala: " + id;
+      });
+      peer.on('connection', c => { conn = c; isMyTurn = true; initGame(); });
+    };
+
+    document.getElementById('btn-join').onclick = () => {
+      if (coins < 20) return showErr("Necesitas $20 para apostar");
+      const id = document.getElementById('join-id').value;
+      if (!id) return showErr("Ingresa un ID válido");
+
+      username = document.getElementById('username').value || 'Jugador 2';
+      
+      coins -= 20;
+      updateCoinsUI();
+
+      peer = new Peer();
+      peer.on('open', () => {
+        conn = peer.connect(id);
+        isMyTurn = false;
+        initGame();
+      });
+    };
+
+    function initGame() {
+      document.getElementById('setup-card').classList.add('hidden');
+      document.getElementById('game-card').classList.remove('hidden');
+
+      conn.on('data', data => {
+        if (data.type === 'SHOOT') {
+          oppScore = data.score;
+          document.getElementById('game-status').innerText = data.hit ? "Rival encestó" : "Rival falló";
+          updateHUD();
+          
+          if (oppScore >= 5) {
+            document.getElementById('game-status').innerText = "❌ PERDISTE LA PARTIDA";
+            setTimeout(() => location.reload(), 2500);
+            return;
+          }
+
+          isMyTurn = true;
+          updateHUD();
+        } else if (data.type === 'CHAT') {
+          addChat(data.user, data.msg);
+        }
+      });
+      updateHUD();
+    }
+
+    function updateHUD() {
+      document.getElementById('p1-txt').innerText = `Tú: ${myScore}/5`;
+      document.getElementById('p2-txt').innerText = `Rival: ${oppScore}/5`;
+      document.getElementById('turn-txt').innerText = isMyTurn ? "Tu Turno" : "Turno Rival";
+    }
+
+    // Chat Directo
+    document.getElementById('btn-send').onclick = () => {
+      const msg = document.getElementById('chat-input').value;
+      if (!msg) return;
+      addChat("Tú", msg);
+      conn.send({ type: 'CHAT', user: username, msg: msg });
+      document.getElementById('chat-input').value = '';
+    };
+
+    function addChat(usr, msg) {
+      const box = document.getElementById('chat-box');
+      box.innerHTML += `<div><b>${usr}:</b> ${msg}</div>`;
+      box.scrollTop = box.scrollHeight;
+    }
 
     // Música Sintetizada
     let audioCtx = null, isMusic = false, musicInt = null;
@@ -119,163 +310,6 @@
         }, 300);
       } else clearInterval(musicInt);
     };
-
-    // Tienda de Skins
-    function buySkin(type, cost, el) {
-      if (coins < cost) return alert("No tienes suficiente dinero");
-      skin = type;
-      document.querySelectorAll('.shop-item').forEach(i => i.classList.remove('active'));
-      el.classList.add('active');
-    }
-
-    // Sistema de Apuntado estilo 8-Ball Pool
-    const court = document.getElementById('court');
-    const aimLine = document.getElementById('aim-line');
-    const ball = document.getElementById('ball');
-
-    court.addEventListener('mousedown', startAim);
-    court.addEventListener('mousemove', updateAim);
-    court.addEventListener('mouseup', endAim);
-
-    function startAim(e) {
-      if (!isMyTurn) return;
-      isCharging = true;
-      power = 0;
-      aimLine.style.display = 'block';
-      powerInterval = setInterval(() => {
-        if (power < 100) power += 3;
-        document.getElementById('power-bar').style.width = power + '%';
-      }, 30);
-      updateAim(e);
-    }
-
-    function updateAim(e) {
-      if (!isCharging) return;
-      const rect = court.getBoundingClientRect();
-      const dx = (e.clientX - rect.left) - 160;
-      const dy = (e.clientY - rect.top) - 261;
-      angle = Math.atan2(dy, dx);
-      
-      const len = 80;
-      aimLine.style.width = len + 'px';
-      aimLine.style.left = '160px';
-      aimLine.style.top = '261px';
-      aimLine.style.transform = `rotate(${angle}rad)`;
-    }
-
-    function endAim() {
-      if (!isCharging) return;
-      isCharging = false;
-      clearInterval(powerInterval);
-      document.getElementById('btn-shoot').disabled = false;
-    }
-
-    // Disparo sin Spam (Bloqueado hasta el siguiente turno)
-    document.getElementById('btn-shoot').onclick = () => {
-      if (!isMyTurn) return;
-      isMyTurn = false;
-      document.getElementById('btn-shoot').disabled = true;
-      aimLine.style.display = 'none';
-
-      // Física simulada
-      const hit = Math.abs(angle + 1.57) < 0.35 && power > 40 && power < 85;
-
-      ball.style.transition = 'all 0.5s ease-out';
-      ball.style.top = hit ? '20px' : '60px';
-
-      setTimeout(() => {
-        if (hit) {
-          myScore++;
-          document.getElementById('game-status').innerText = "¡ENCESTASTE! 🎯";
-        } else {
-          document.getElementById('game-status').innerText = "¡FALLASTE!";
-        }
-
-        updateHUD();
-        conn.send({ type: 'SHOOT', score: myScore, hit: hit });
-
-        // Verificación de Victoria (Llegar a 5)
-        if (myScore >= 5) {
-          coins += 40;
-          localStorage.setItem('eb_coins', coins);
-          alert("🏆 ¡VICTORIA! Ganaste la apuesta de $40");
-          location.reload();
-        }
-
-        setTimeout(() => {
-          ball.style.top = '250px';
-          document.getElementById('power-bar').style.width = '0%';
-        }, 800);
-      }, 500);
-    };
-
-    // Red y Servidor P2P
-    document.getElementById('btn-host').onclick = () => {
-      username = document.getElementById('username').value || 'Jugador 1';
-      peer = new Peer();
-      peer.on('open', id => {
-        document.getElementById('host-id').innerText = "ID de Sala: " + id;
-      });
-      peer.on('connection', c => { conn = c; isMyTurn = true; initGame(); });
-    };
-
-    document.getElementById('btn-join').onclick = () => {
-      username = document.getElementById('username').value || 'Jugador 2';
-      const id = document.getElementById('join-id').value;
-      peer = new Peer();
-      peer.on('open', () => {
-        conn = peer.connect(id);
-        isMyTurn = false;
-        initGame();
-      });
-    };
-
-    function initGame() {
-      document.getElementById('setup-card').classList.add('hidden');
-      document.getElementById('game-card').classList.remove('hidden');
-
-      conn.on('data', data => {
-        if (data.type === 'SHOOT') {
-          oppScore = data.score;
-          document.getElementById('game-status').innerText = data.hit ? "El rival encestó 🎒" : "El rival falló";
-          updateHUD();
-          
-          if (oppScore >= 5) {
-            coins -= 20;
-            localStorage.setItem('eb_coins', coins);
-            alert("❌ Derrota. El rival llegó a 5 puntos.");
-            location.reload();
-          }
-
-          isMyTurn = true;
-          document.getElementById('turn-txt').innerText = "Tu Turno";
-        } else if (data.type === 'CHAT') {
-          addChat(data.user, data.msg);
-        }
-      });
-      updateHUD();
-    }
-
-    function updateHUD() {
-      document.getElementById('p1-txt').innerText = `Tú: ${myScore}/5`;
-      document.getElementById('p2-txt').innerText = `Rival: ${oppScore}/5`;
-      document.getElementById('turn-txt').innerText = isMyTurn ? "Tu Turno" : "Esperando Rival...";
-    }
-
-    // Chat sin Anti-Spam
-    document.getElementById('btn-send').onclick = () => {
-      const msg = document.getElementById('chat-input').value;
-      if (!msg) return;
-      addChat("Tú", msg);
-      conn.send({ type: 'CHAT', user: username, msg: msg });
-      document.getElementById('chat-input').value = '';
-    };
-
-    function addChat(usr, msg) {
-      const box = document.getElementById('chat-box');
-      box.innerHTML += `<div><b>${usr}:</b> ${msg}</div>`;
-      box.scrollTop = box.scrollHeight;
-    }
   </script>
 </body>
 </html>
