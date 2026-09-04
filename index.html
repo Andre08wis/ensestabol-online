@@ -3,164 +3,247 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EncestaBol Online - 1vs1 & Skins</title>
+  <title>EncestaBol Online - Multiplayer, Chat & Ranking</title>
   <style>
     * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
     body { background: #1a1a2e; color: #fff; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding-bottom: 30px; }
     header { margin-top: 15px; text-align: center; }
-    .card { background: #16213e; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); width: 90%; max-width: 400px; text-align: center; margin-top: 15px; }
-    input { width: 48%; padding: 10px; margin: 5px 1%; border: none; border-radius: 6px; background: #0f3460; color: white; text-align: center; }
-    button { width: 100%; padding: 12px; background: #2ecc71; border: none; color: white; font-weight: bold; border-radius: 6px; cursor: pointer; margin-top: 10px; transition: 0.2s; }
+    .card { background: #16213e; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); width: 90%; max-width: 420px; text-align: center; margin-top: 15px; }
+    input { width: 100%; padding: 10px; margin: 5px 0; border: none; border-radius: 6px; background: #0f3460; color: white; text-align: center; }
+    button { width: 100%; padding: 12px; background: #2ecc71; border: none; color: white; font-weight: bold; border-radius: 6px; cursor: pointer; margin-top: 8px; transition: 0.2s; }
     button:hover { background: #27ae60; }
     .hidden { display: none; }
     
-    /* Selector de Skins */
-    .skins-container { display: flex; justify-content: center; gap: 10px; margin: 10px 0; }
-    .skin-opt { width: 35px; height: 35px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; }
-    .skin-opt.selected { border-color: #fff; transform: scale(1.1); }
-
     /* Cancha de juego */
-    #court { position: relative; width: 300px; height: 320px; background: #0f3460; border: 3px solid #2ecc71; border-radius: 10px; margin: 15px auto; overflow: hidden; }
+    #court { position: relative; width: 300px; height: 300px; background: #0f3460; border: 3px solid #2ecc71; border-radius: 10px; margin: 15px auto; overflow: hidden; }
     .cartuchera { position: absolute; width: 90px; height: 35px; background: #ff9f43; border: 2px solid #fff; border-radius: 6px; left: 105px; text-align: center; line-height: 35px; font-size: 11px; font-weight: bold; color: #000; }
     #cartuchera-p1 { top: 10px; }
-    
-    .ball { position: absolute; width: 22px; height: 22px; border-radius: 50%; left: 139px; transition: top 0.4s cubic-bezier(0.25, 1, 0.5, 1); }
+    .ball { position: absolute; width: 22px; height: 22px; background: #e74c3c; border-radius: 50%; left: 139px; transition: top 0.4s ease-out; }
     
     .stats { display: flex; justify-content: space-between; font-weight: bold; background: #0f3460; padding: 10px; border-radius: 8px; }
-    .turn-indicator { color: #f1c40f; font-weight: bold; margin: 10px 0; }
+    
+    /* Chat Box */
+    #chat-box { height: 100px; background: #0f3460; border-radius: 6px; overflow-y: auto; text-align: left; padding: 8px; font-size: 13px; margin-top: 10px; }
+    .chat-msg { margin-bottom: 4px; }
+    .chat-msg span { font-weight: bold; color: #f1c40f; }
+
+    /* Ranking */
+    table { width: 100%; margin-top: 8px; border-collapse: collapse; text-align: left; }
+    th, td { padding: 6px; border-bottom: 1px solid #0f3460; font-size: 13px; }
+    th { color: #f1c40f; }
   </style>
+
+  <!-- PeerJS para Multijugador P2P Real -->
+  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 </head>
 <body>
 
   <header>
-    <h1>🏀 EncestaBol 1vs1</h1>
-    <p>Distancia: 3 Pies | Multijugador & Skins</p>
+    <h1>🏀 EncestaBol Online</h1>
+    <p>Distancia: 3 Pies | 1vs1 Realtime</p>
+    <button id="btn-music" style="width: auto; padding: 5px 15px; background: #9b59b6; font-size: 12px;">🎵 Música: OFF</button>
   </header>
 
-  <!-- Menú Inicial -->
+  <!-- Paso 1: Conexión Multiplayer -->
   <div id="setup-card" class="card">
-    <h2>Configurar Partida 1vs1</h2>
+    <h2>Sala Multijugador</h2>
+    <input type="text" id="username" placeholder="Tu Apodo">
     
-    <div style="display:flex; justify-content: space-between;">
-      <input type="text" id="p1-name" placeholder="Jugador 1" value="Jugador 1">
-      <input type="text" id="p2-name" placeholder="Jugador 2" value="Jugador 2">
-    </div>
-
-    <h3>Elige la Skin de la Pelota</h3>
-    <div class="skins-container">
-      <div class="skin-opt selected" style="background: #e74c3c;" onclick="selectSkin('#e74c3c', this)"></div>
-      <div class="skin-opt" style="background: #f1c40f;" onclick="selectSkin('#f1c40f', this)"></div>
-      <div class="skin-opt" style="background: #9b59b6;" onclick="selectSkin('#9b59b6', this)"></div>
-      <div class="skin-opt" style="background: #3498db;" onclick="selectSkin('#3498db', this)"></div>
-      <div class="skin-opt" style="background: #2ecc71;" onclick="selectSkin('#2ecc71', this)"></div>
-    </div>
-
-    <button id="btn-start">¡Empezar Duelo!</button>
+    <button id="btn-host" style="background: #e67e22;">Crear Sala (Host)</button>
+    <p id="host-id-display" style="font-size: 12px; color: #f1c40f; word-break: break-all;"></p>
+    
+    <hr style="border-color: #0f3460; margin: 15px 0;">
+    
+    <input type="text" id="join-id" placeholder="Pegar ID de Sala del Rival">
+    <button id="btn-join">Unirse a Sala</button>
   </div>
 
-  <!-- Juego -->
+  <!-- Paso 2: Pantalla de Juego -->
   <div id="game-card" class="card hidden">
     <div class="stats">
-      <span id="p1-display">J1: 0</span>
-      <span id="p2-display">J2: 0</span>
+      <span id="p1-display">Tú: 0</span>
+      <span id="p2-display">Rival: 0</span>
     </div>
-
-    <div class="turn-indicator" id="turn-txt">Turno de: Jugador 1</div>
 
     <div id="court">
       <div id="cartuchera-p1" class="cartuchera">🎒 Cartuchera</div>
-      <div id="ball" class="ball" style="top: 270px; background: #e74c3c;"></div>
+      <div id="ball" class="ball" style="top: 250px;"></div>
     </div>
 
     <button id="btn-throw">🚀 Lanzar Pelota</button>
-    <p id="game-status" style="margin-top: 10px; color: #f1c40f; min-height: 20px;"></p>
-    <button id="btn-reset" style="background: #7f8c8d; padding: 6px; font-size: 12px; margin-top: 15px;">Cambiar Nombres / Skin</button>
+    <p id="game-status" style="margin-top: 5px; color: #f1c40f; font-size: 13px;"></p>
+
+    <!-- Chat -->
+    <div id="chat-box"></div>
+    <div style="display: flex; gap: 5px;">
+      <input type="text" id="chat-input" placeholder="Escribe un mensaje..." style="width: 75%;">
+      <button id="btn-send" style="width: 25%; margin-top: 5px;">Enviar</button>
+    </div>
+
+    <!-- Ranking Local -->
+    <hr style="border-color: #0f3460; margin: 15px 0;">
+    <h3>🏆 Ranking Local</h3>
+    <table>
+      <thead>
+        <tr><th>#</th><th>Jugador</th><th>Puntos</th></tr>
+      </thead>
+      <tbody id="leaderboard-body"></tbody>
+    </table>
   </div>
 
   <script>
-    // Variables de Juego
-    let selectedSkinColor = '#e74c3c';
-    let p1Name = 'Jugador 1';
-    let p2Name = 'Jugador 2';
-    let p1Score = 0;
-    let p2Score = 0;
-    let turn = 1; // 1 o 2
-    let isThrowing = false;
+    let peer = null;
+    let conn = null;
+    let username = '';
+    let myScore = 0;
+    let opponentScore = 0;
+    let isMyTurn = true;
 
-    // Elementos DOM
-    const setupCard = document.getElementById('setup-card');
-    const gameCard = document.getElementById('game-card');
-    const ball = document.getElementById('ball');
-    const turnTxt = document.getElementById('turn-txt');
-    const gameStatus = document.getElementById('game-status');
+    // Audio retro generado por Web Audio API
+    let audioCtx = null;
+    let isMusicPlaying = false;
+    let musicInterval = null;
 
-    function selectSkin(color, el) {
-      selectedSkinColor = color;
-      document.querySelectorAll('.skin-opt').forEach(opt => opt.classList.remove('selected'));
-      el.classList.add('selected');
+    function play8BitMusic() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const notes = [261.63, 329.63, 392.00, 523.25, 392.00, 329.63];
+      let i = 0;
+      musicInterval = setInterval(() => {
+        if (!isMusicPlaying) return;
+        let osc = audioCtx.createOscillator();
+        let gain = audioCtx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(notes[i % notes.length], audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.03, audioCtx.currentTime);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.15);
+        i++;
+      }, 250);
     }
 
-    document.getElementById('btn-start').onclick = () => {
-      p1Name = document.getElementById('p1-name').value.trim() || 'Jugador 1';
-      p2Name = document.getElementById('p2-name').value.trim() || 'Jugador 2';
-      
-      p1Score = 0;
-      p2Score = 0;
-      turn = 1;
-
-      ball.style.backgroundColor = selectedSkinColor;
-      
-      setupCard.classList.add('hidden');
-      gameCard.classList.remove('hidden');
-      
-      updateUI();
+    document.getElementById('btn-music').onclick = () => {
+      isMusicPlaying = !isMusicPlaying;
+      document.getElementById('btn-music').innerText = isMusicPlaying ? "🎵 Música: ON" : "🎵 Música: OFF";
+      if (isMusicPlaying) play8BitMusic();
+      else clearInterval(musicInterval);
     };
 
-    function updateUI() {
-      document.getElementById('p1-display').innerText = `${p1Name}: ${p1Score}`;
-      document.getElementById('p2-display').innerText = `${p2Name}: ${p2Score}`;
-      turnTxt.innerText = `Turno de: ${turn === 1 ? p1Name : p2Name}`;
+    // Inicializar PeerJS
+    document.getElementById('btn-host').onclick = () => {
+      username = document.getElementById('username').value.trim() || 'Jugador 1';
+      peer = new Peer();
+      peer.on('open', (id) => {
+        document.getElementById('host-id-display').innerText = "Comparte este ID con tu rival:\n" + id;
+      });
+      peer.on('connection', (c) => {
+        conn = c;
+        setupConnection();
+      });
+    };
+
+    document.getElementById('btn-join').onclick = () => {
+      username = document.getElementById('username').value.trim() || 'Jugador 2';
+      const joinId = document.getElementById('join-id').value.trim();
+      if (!joinId) return alert("Pega el ID de la sala");
+      
+      peer = new Peer();
+      peer.on('open', () => {
+        conn = peer.connect(joinId);
+        setupConnection();
+      });
+    };
+
+    function setupConnection() {
+      document.getElementById('setup-card').classList.add('hidden');
+      document.getElementById('game-card').classList.remove('hidden');
+
+      conn.on('open', () => {
+        conn.send({ type: 'JOIN', name: username });
+      });
+
+      conn.on('data', (data) => {
+        if (data.type === 'CHAT') {
+          addChatMessage(data.name, data.msg);
+        } else if (data.type === 'THROW') {
+          handleOpponentThrow(data.hit, data.score);
+        }
+      });
+
+      updateRanking();
     }
 
-    document.getElementById('btn-throw').onclick = () => {
-      if (isThrowing) return;
-      isThrowing = true;
+    // Chat
+    document.getElementById('btn-send').onclick = sendChat;
+    document.getElementById('chat-input').onkeypress = (e) => { if(e.key === 'Enter') sendChat(); };
 
-      // Animar Lanzamiento
-      ball.style.top = '270px';
+    function sendChat() {
+      const input = document.getElementById('chat-input');
+      const msg = input.value.trim();
+      if (!msg || !conn) return;
+      
+      addChatMessage("Tú", msg);
+      conn.send({ type: 'CHAT', name: username, msg: msg });
+      input.value = '';
+    }
+
+    function addChatMessage(author, msg) {
+      const box = document.getElementById('chat-box');
+      box.innerHTML += `<div class="chat-msg"><span>${author}:</span> ${msg}</div>`;
+      box.scrollTop = box.scrollHeight;
+    }
+
+    // Lanzamiento
+    document.getElementById('btn-throw').onclick = () => {
+      if (!isMyTurn) return alert("Es el turno del rival");
+      
+      const ball = document.getElementById('ball');
+      ball.style.top = '250px';
       setTimeout(() => { ball.style.top = '18px'; }, 50);
 
-      // Calcular si encesta (50% probabilidad)
       setTimeout(() => {
         const hit = Math.random() > 0.5;
-
         if (hit) {
-          if (turn === 1) p1Score++;
-          else p2Score++;
-          
-          gameStatus.innerText = `🎯 ¡${turn === 1 ? p1Name : p2Name} ENCESTÓ EN LA CARTUCHERA!`;
+          myScore++;
+          document.getElementById('game-status').innerText = "¡ENCESTASTE! 🎯";
         } else {
-          gameStatus.innerText = `❌ ¡${turn === 1 ? p1Name : p2Name} falló el tiro!`;
+          document.getElementById('game-status').innerText = "¡Fallaste!";
         }
 
-        // Cambiar turno
-        turn = turn === 1 ? 2 : 1;
-        updateUI();
+        document.getElementById('p1-display').innerText = `Tú: ${myScore}`;
+        conn.send({ type: 'THROW', hit: hit, score: myScore });
+        
+        saveScore(username, myScore);
+        updateRanking();
 
-        // Regresar pelota
-        setTimeout(() => { 
-          ball.style.top = '270px'; 
-          isThrowing = false;
-        }, 800);
-
-      }, 450);
+        setTimeout(() => { ball.style.top = '250px'; }, 800);
+      }, 400);
     };
 
-    document.getElementById('btn-reset').onclick = () => {
-      gameCard.classList.add('hidden');
-      setupCard.classList.remove('hidden');
-      gameStatus.innerText = '';
-    };
+    function handleOpponentThrow(hit, score) {
+      opponentScore = score;
+      document.getElementById('p2-display').innerText = `Rival: ${opponentScore}`;
+      document.getElementById('game-status').innerText = hit ? "¡El rival encestó! 🎒" : "El rival falló el tiro";
+    }
+
+    // Guardado de Ranking Local
+    function saveScore(user, pts) {
+      let scores = JSON.parse(localStorage.getItem('encestabol_ranking') || '[]');
+      scores = scores.filter(s => s.name !== user);
+      scores.push({ name: user, score: pts });
+      scores.sort((a,b) => b.score - a.score);
+      localStorage.setItem('encestabol_ranking', JSON.stringify(scores.slice(0, 5)));
+    }
+
+    function updateRanking() {
+      const scores = JSON.parse(localStorage.getItem('encestabol_ranking') || '[]');
+      const body = document.getElementById('leaderboard-body');
+      body.innerHTML = '';
+      scores.forEach((s, i) => {
+        body.innerHTML += `<tr><td>${i+1}</td><td>${s.name}</td><td>${s.score} pts</td></tr>`;
+      });
+    }
   </script>
 </body>
 </html>
