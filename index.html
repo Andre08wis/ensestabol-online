@@ -12,6 +12,8 @@
     input { width: 100%; padding: 10px; margin: 5px 0; border-radius: 6px; border: none; background: #334155; color: #fff; text-align: center; }
     button { width: 100%; padding: 10px; background: #22c55e; border: none; color: #fff; font-weight: bold; border-radius: 6px; cursor: pointer; margin-top: 6px; }
     button:disabled { background: #475569; cursor: not-allowed; }
+    .btn-secondary { background: #3b82f6; }
+    .btn-guest { background: #64748b; }
     .hidden { display: none; }
 
     /* Cancha de Juego */
@@ -38,14 +40,25 @@
 
   <header>
     <h1>🏀 EncestaBol 8-Ball</h1>
-    <p>Monedas: 💵 $<span id="user-coins">100</span></p>
+    <p>Usuario: <span id="user-display">---</span> | 💵 $<span id="user-coins">100</span></p>
     <button id="btn-music" style="width:auto; padding:4px 10px; font-size:11px; background:#8b5cf6;">🎵 Música: OFF</button>
   </header>
 
+  <!-- Pantalla de Login / Invitado -->
+  <div id="auth-card" class="card">
+    <h2>Ingreso al Juego</h2>
+    <div id="auth-error" style="color:#ef4444; font-size:12px; margin-bottom:5px;"></div>
+    
+    <input type="email" id="auth-email" placeholder="Correo electrónico">
+    <input type="password" id="auth-pass" placeholder="Contraseña">
+    
+    <button id="btn-login-email" class="btn-secondary">Iniciar Sesión / Registrarse</button>
+    <button id="btn-login-guest" class="btn-guest">Entrar como Invitado</button>
+  </div>
+
   <!-- Menu Principal / Tienda -->
-  <div id="setup-card" class="card">
+  <div id="setup-card" class="card hidden">
     <div id="error-msg"></div>
-    <input type="text" id="username" placeholder="Tu Apodo">
     
     <div class="shop-grid">
       <div class="shop-item active" id="skin-red" onclick="selectSkin('red', 0)">🔴 Roja<br>Gratis</div>
@@ -58,6 +71,7 @@
     
     <input type="text" id="join-id" placeholder="ID de Sala del Rival">
     <button id="btn-join">Unirse a Sala (Apuesta $20)</button>
+    <button id="btn-logout" class="btn-guest" style="margin-top:15px;">Cerrar Sesión</button>
   </div>
 
   <!-- Pantalla de Juego Pool -->
@@ -88,23 +102,70 @@
   </div>
 
   <script>
-    // Sistema de Dinero Real
-    let coins = parseInt(localStorage.getItem('eb_coins') || '100');
-    let inventory = JSON.parse(localStorage.getItem('eb_inv') || '["red"]');
+    let currentUser = null;
+    let coins = 100;
+    let inventory = ["red"];
     let selectedSkin = 'red';
+    
     let myScore = 0, oppScore = 0;
     let isMyTurn = false;
     let isCharging = false;
     let power = 0, angle = 0;
     let powerInterval = null;
     let peer = null, conn = null;
-    let username = '';
+
+    // Control de Autenticación
+    document.getElementById('btn-login-email').onclick = () => {
+      const email = document.getElementById('auth-email').value.trim();
+      const pass = document.getElementById('auth-pass').value.trim();
+      
+      if (!email || !pass) {
+        document.getElementById('auth-error').innerText = "Ingresa correo y contraseña";
+        return;
+      }
+
+      const userId = 'user_' + btoa(email).replace(/=/g, '');
+      loginUser(userId, email.split('@')[0]);
+    };
+
+    document.getElementById('btn-login-guest').onclick = () => {
+      const guestId = 'guest_' + Math.floor(Math.random() * 10000);
+      loginUser(guestId, 'Invitado_' + guestId.split('_')[1]);
+    };
+
+    document.getElementById('btn-logout').onclick = () => {
+      localStorage.removeItem('eb_session');
+      location.reload();
+    };
+
+    function loginUser(id, name) {
+      currentUser = { id, name };
+      localStorage.setItem('eb_session', JSON.stringify(currentUser));
+      
+      // Cargar datos de la cuenta desde almacenamiento
+      coins = parseInt(localStorage.getItem('eb_coins_' + id) || '100');
+      inventory = JSON.parse(localStorage.getItem('eb_inv_' + id) || '["red"]');
+
+      document.getElementById('user-display').innerText = name;
+      updateCoinsUI();
+
+      document.getElementById('auth-card').classList.add('hidden');
+      document.getElementById('setup-card').classList.remove('hidden');
+    }
+
+    // Auto-login si ya inició sesión
+    const savedSession = localStorage.getItem('eb_session');
+    if (savedSession) {
+      const session = JSON.parse(savedSession);
+      loginUser(session.id, session.name);
+    }
 
     function updateCoinsUI() {
       document.getElementById('user-coins').innerText = coins;
-      localStorage.setItem('eb_coins', coins);
+      if (currentUser) {
+        localStorage.setItem('eb_coins_' + currentUser.id, coins);
+      }
     }
-    updateCoinsUI();
 
     function showErr(m) {
       document.getElementById('error-msg').innerText = m;
@@ -117,7 +178,9 @@
         if (coins < cost) return showErr("No tienes dinero suficiente");
         coins -= cost;
         inventory.push(type);
-        localStorage.setItem('eb_inv', JSON.stringify(inventory));
+        if (currentUser) {
+          localStorage.setItem('eb_inv_' + currentUser.id, JSON.stringify(inventory));
+        }
         updateCoinsUI();
       }
       selectedSkin = type;
@@ -182,7 +245,6 @@
       document.getElementById('btn-shoot').disabled = true;
       aimLine.style.display = 'none';
 
-      // Cálculo de acierto
       const hit = Math.abs(angle + 1.57) < 0.3 && power > 45 && power < 85;
 
       ball.style.transition = 'all 0.4s ease-out';
@@ -199,9 +261,8 @@
         updateHUD();
         conn.send({ type: 'SHOOT', score: myScore, hit: hit });
 
-        // Condición de Victoria (Fin de partida)
         if (myScore >= 5) {
-          coins += 40; // Devuelve apuesta + ganancia ($20 + $20)
+          coins += 40;
           updateCoinsUI();
           document.getElementById('game-status').innerText = "🏆 ¡GANASTE EL JUEGO +$40!";
           setTimeout(() => location.reload(), 2500);
@@ -215,10 +276,9 @@
       }, 400);
     };
 
-    // Conexión P2P (Reducir $20 al apostar)
+    // Conexión P2P
     document.getElementById('btn-host').onclick = () => {
       if (coins < 20) return showErr("Necesitas $20 para apostar");
-      username = document.getElementById('username').value || 'Jugador 1';
       
       coins -= 20;
       updateCoinsUI();
@@ -235,8 +295,6 @@
       const id = document.getElementById('join-id').value;
       if (!id) return showErr("Ingresa un ID válido");
 
-      username = document.getElementById('username').value || 'Jugador 2';
-      
       coins -= 20;
       updateCoinsUI();
 
@@ -279,12 +337,12 @@
       document.getElementById('turn-txt').innerText = isMyTurn ? "Tu Turno" : "Turno Rival";
     }
 
-    // Chat Directo
+    // Chat
     document.getElementById('btn-send').onclick = () => {
       const msg = document.getElementById('chat-input').value;
       if (!msg) return;
       addChat("Tú", msg);
-      conn.send({ type: 'CHAT', user: username, msg: msg });
+      conn.send({ type: 'CHAT', user: currentUser.name, msg: msg });
       document.getElementById('chat-input').value = '';
     };
 
@@ -294,7 +352,7 @@
       box.scrollTop = box.scrollHeight;
     }
 
-    // Música Sintetizada
+    // Música
     let audioCtx = null, isMusic = false, musicInt = null;
     document.getElementById('btn-music').onclick = () => {
       isMusic = !isMusic;
