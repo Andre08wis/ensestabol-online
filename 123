@@ -1,1 +1,175 @@
-/h3 hola encestabol online dentro de pronto <h1/
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EncestaBol Online - Supabase</title>
+  <style>
+    * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { background: #1a1a2e; color: #fff; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+    header { margin-top: 20px; text-align: center; }
+    .card { background: #16213e; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); width: 90%; max-width: 400px; text-align: center; margin-top: 20px; }
+    input { width: 100%; padding: 12px; margin: 8px 0; border: none; border-radius: 6px; background: #0f3460; color: white; }
+    button { width: 100%; padding: 12px; background: #2ecc71; border: none; color: white; font-weight: bold; border-radius: 6px; cursor: pointer; margin-top: 10px; transition: 0.2s; }
+    button:hover { background: #27ae60; }
+    .hidden { display: none; }
+    
+    /* Cancha de juego */
+    #court { position: relative; width: 300px; height: 400px; background: #0f3460; border: 3px solid #2ecc71; border-radius: 10px; margin: 20px auto; overflow: hidden; }
+    .cartuchera { position: absolute; width: 80px; height: 30px; background: #ff9f43; border: 2px solid #fff; border-radius: 6px; left: 110px; text-align: center; line-height: 30px; font-size: 12px; font-weight: bold; }
+    #cartuchera-p1 { top: 10px; }
+    #cartuchera-p2 { bottom: 10px; }
+    .ball { position: absolute; width: 20px; height: 20px; background: #e74c3c; border-radius: 50%; left: 140px; transition: top 0.4s ease-out; }
+    .stats { display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: bold; }
+  </style>
+
+  <!-- Supabase JS Client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+  <header>
+    <h1>🏀 EncestaBol Online</h1>
+    <p>Distancia: 3 Pies | 1 vs 1</p>
+  </header>
+
+  <!-- Login / Registro -->
+  <div id="auth-card" class="card">
+    <h2>Cuenta de Supabase</h2>
+    <input type="email" id="email" placeholder="Correo electrónico">
+    <input type="password" id="password" placeholder="Contraseña">
+    <button id="btn-login">Iniciar Sesión</button>
+    <button id="btn-signup" style="background: #0f3460;">Crear Cuenta</button>
+  </div>
+
+  <!-- Panel del Juego -->
+  <div id="game-card" class="card hidden">
+    <div class="stats">
+      <span>Jugador: <span id="user-display">---</span></span>
+      <span>Puntos Totales: <span id="user-score">0</span></span>
+    </div>
+    
+    <button id="btn-logout" style="background: #555;">Cerrar Sesión</button>
+    <hr style="border-color: #0f3460; margin: 15px 0;">
+
+    <h3>Lanza a la Cartuchera</h3>
+    
+    <div id="court">
+      <div id="cartuchera-p1" class="cartuchera">Rival</div>
+      <div id="ball" class="ball" style="top: 350px;"></div>
+      <div id="cartuchera-p2" class="cartuchera">Tuya</div>
+    </div>
+
+    <button id="btn-throw">🚀 Lanzar Pelota</button>
+    <p id="game-status" style="margin-top: 10px; color: #f1c40f;"></p>
+  </div>
+
+  <script>
+    // 1. REEMPLAZA ESTOS VALORES CON TUS CREDENCIALES DE SUPABASE
+    const SUPABASE_URL = "https://TU_PROYECTO.supabase.co";
+    const SUPABASE_ANON_KEY = "TU_SUPABASE_ANON_KEY";
+
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // Referencias DOM
+    const authCard = document.getElementById('auth-card');
+    const gameCard = document.getElementById('game-card');
+    const emailInput = document.getElementById('email');
+    const passInput = document.getElementById('password');
+    const userDisplay = document.getElementById('user-display');
+    const userScore = document.getElementById('user-score');
+    const gameStatus = document.getElementById('game-status');
+    const ball = document.getElementById('ball');
+
+    let currentUser = null;
+    let score = 0;
+
+    // Crear cuenta
+    document.getElementById('btn-signup').onclick = async () => {
+      const email = emailInput.value;
+      const password = passInput.value;
+      const { data, error } = await supabase.auth.signUp({ email, password });
+      if (error) alert(error.message);
+      else alert("Cuenta creada. Ya puedes iniciar sesión.");
+    };
+
+    // Iniciar sesión
+    document.getElementById('btn-login').onclick = async () => {
+      const email = emailInput.value;
+      const password = passInput.value;
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) alert(error.message);
+    };
+
+    // Cerrar sesión
+    document.getElementById('btn-logout').onclick = async () => {
+      await supabase.auth.signOut();
+    };
+
+    // Escuchar cambios de sesión
+    supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        currentUser = session.user;
+        authCard.classList.add('hidden');
+        gameCard.classList.remove('hidden');
+        userDisplay.innerText = currentUser.email.split('@')[0];
+        cargarPuntaje(currentUser.id);
+      } else {
+        currentUser = null;
+        authCard.classList.remove('hidden');
+        gameCard.classList.add('hidden');
+      }
+    });
+
+    // Cargar puntaje desde la tabla "profiles"
+    async function cargarPuntaje(userId) {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('score')
+        .eq('id', userId)
+        .single();
+
+      if (data) {
+        score = data.score || 0;
+        userScore.innerText = score;
+      } else if (error) {
+        // Si el perfil no existe, lo creamos
+        await supabase.from('profiles').insert([{ id: userId, score: 0 }]);
+        score = 0;
+        userScore.innerText = score;
+      }
+    }
+
+    // Mecánica del tiro
+    document.getElementById('btn-throw').onclick = () => {
+      ball.style.top = '350px';
+      
+      // Animación
+      setTimeout(() => { ball.style.top = '20px'; }, 50);
+
+      // Calcular acierto
+      setTimeout(async () => {
+        const hit = Math.random() > 0.5;
+        if (hit) {
+          score += 1;
+          userScore.innerText = score;
+          gameStatus.innerText = "¡ENCESTASTE EN LA CARTUCHERA! 🎯 +1 Punto";
+          
+          // Actualizar puntos en Supabase
+          if (currentUser) {
+            await supabase
+              .from('profiles')
+              .update({ score: score })
+              .eq('id', currentUser.id);
+          }
+        } else {
+          gameStatus.innerText = "¡Fallaste! Inténtalo de nuevo.";
+        }
+        
+        // Reset pelota
+        setTimeout(() => { ball.style.top = '350px'; }, 1000);
+      }, 450);
+    };
+  </script>
+</body>
+</html>
