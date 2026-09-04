@@ -3,174 +3,163 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EncestaBol Online - Sin Registro</title>
+  <title>EncestaBol Online - 1vs1 & Skins</title>
   <style>
     * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
     body { background: #1a1a2e; color: #fff; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding-bottom: 30px; }
-    header { margin-top: 20px; text-align: center; }
-    .card { background: #16213e; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); width: 90%; max-width: 400px; text-align: center; margin-top: 20px; }
-    input { width: 100%; padding: 12px; margin: 8px 0; border: none; border-radius: 6px; background: #0f3460; color: white; text-align: center; }
+    header { margin-top: 15px; text-align: center; }
+    .card { background: #16213e; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); width: 90%; max-width: 400px; text-align: center; margin-top: 15px; }
+    input { width: 48%; padding: 10px; margin: 5px 1%; border: none; border-radius: 6px; background: #0f3460; color: white; text-align: center; }
     button { width: 100%; padding: 12px; background: #2ecc71; border: none; color: white; font-weight: bold; border-radius: 6px; cursor: pointer; margin-top: 10px; transition: 0.2s; }
     button:hover { background: #27ae60; }
     .hidden { display: none; }
     
-    #court { position: relative; width: 300px; height: 350px; background: #0f3460; border: 3px solid #2ecc71; border-radius: 10px; margin: 15px auto; overflow: hidden; }
-    .cartuchera { position: absolute; width: 80px; height: 30px; background: #ff9f43; border: 2px solid #fff; border-radius: 6px; left: 110px; text-align: center; line-height: 30px; font-size: 12px; font-weight: bold; }
+    /* Selector de Skins */
+    .skins-container { display: flex; justify-content: center; gap: 10px; margin: 10px 0; }
+    .skin-opt { width: 35px; height: 35px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; }
+    .skin-opt.selected { border-color: #fff; transform: scale(1.1); }
+
+    /* Cancha de juego */
+    #court { position: relative; width: 300px; height: 320px; background: #0f3460; border: 3px solid #2ecc71; border-radius: 10px; margin: 15px auto; overflow: hidden; }
+    .cartuchera { position: absolute; width: 90px; height: 35px; background: #ff9f43; border: 2px solid #fff; border-radius: 6px; left: 105px; text-align: center; line-height: 35px; font-size: 11px; font-weight: bold; color: #000; }
     #cartuchera-p1 { top: 10px; }
-    #cartuchera-p2 { bottom: 10px; }
-    .ball { position: absolute; width: 20px; height: 20px; background: #e74c3c; border-radius: 50%; left: 140px; transition: top 0.4s ease-out; }
-    .stats { display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: bold; }
-
-    table { width: 100%; margin-top: 10px; border-collapse: collapse; text-align: left; }
-    th, td { padding: 8px; border-bottom: 1px solid #0f3460; font-size: 14px; }
-    th { color: #f1c40f; }
+    
+    .ball { position: absolute; width: 22px; height: 22px; border-radius: 50%; left: 139px; transition: top 0.4s cubic-bezier(0.25, 1, 0.5, 1); }
+    
+    .stats { display: flex; justify-content: space-between; font-weight: bold; background: #0f3460; padding: 10px; border-radius: 8px; }
+    .turn-indicator { color: #f1c40f; font-weight: bold; margin: 10px 0; }
   </style>
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
   <header>
-    <h1>🏀 EncestaBol Online</h1>
-    <p>Distancia: 3 Pies | 1 vs 1</p>
+    <h1>🏀 EncestaBol 1vs1</h1>
+    <p>Distancia: 3 Pies | Multijugador & Skins</p>
   </header>
 
-  <!-- Paso 1: Ingresar Apodo -->
+  <!-- Menú Inicial -->
   <div id="setup-card" class="card">
-    <h2>Ingresa tu Apodo</h2>
-    <input type="text" id="username" placeholder="Ej. Carlos123" maxlength="12">
-    <button id="btn-start">Entrar a Jugar</button>
-  </div>
-
-  <!-- Paso 2: Juego -->
-  <div id="game-card" class="card hidden">
-    <div class="stats">
-      <span>Jugador: <span id="user-display">---</span></span>
-      <span>Puntos: <span id="user-score">0</span></span>
+    <h2>Configurar Partida 1vs1</h2>
+    
+    <div style="display:flex; justify-content: space-between;">
+      <input type="text" id="p1-name" placeholder="Jugador 1" value="Jugador 1">
+      <input type="text" id="p2-name" placeholder="Jugador 2" value="Jugador 2">
     </div>
 
+    <h3>Elige la Skin de la Pelota</h3>
+    <div class="skins-container">
+      <div class="skin-opt selected" style="background: #e74c3c;" onclick="selectSkin('#e74c3c', this)"></div>
+      <div class="skin-opt" style="background: #f1c40f;" onclick="selectSkin('#f1c40f', this)"></div>
+      <div class="skin-opt" style="background: #9b59b6;" onclick="selectSkin('#9b59b6', this)"></div>
+      <div class="skin-opt" style="background: #3498db;" onclick="selectSkin('#3498db', this)"></div>
+      <div class="skin-opt" style="background: #2ecc71;" onclick="selectSkin('#2ecc71', this)"></div>
+    </div>
+
+    <button id="btn-start">¡Empezar Duelo!</button>
+  </div>
+
+  <!-- Juego -->
+  <div id="game-card" class="card hidden">
+    <div class="stats">
+      <span id="p1-display">J1: 0</span>
+      <span id="p2-display">J2: 0</span>
+    </div>
+
+    <div class="turn-indicator" id="turn-txt">Turno de: Jugador 1</div>
+
     <div id="court">
-      <div id="cartuchera-p1" class="cartuchera">Rival</div>
-      <div id="ball" class="ball" style="top: 300px;"></div>
-      <div id="cartuchera-p2" class="cartuchera">Tuya</div>
+      <div id="cartuchera-p1" class="cartuchera">🎒 Cartuchera</div>
+      <div id="ball" class="ball" style="top: 270px; background: #e74c3c;"></div>
     </div>
 
     <button id="btn-throw">🚀 Lanzar Pelota</button>
-    <p id="game-status" style="margin-top: 10px; color: #f1c40f;"></p>
-
-    <hr style="border-color: #0f3460; margin: 20px 0;">
-    <h3>🏆 Top 5 Mejores Jugadores</h3>
-    <table>
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Jugador</th>
-          <th>Puntos</th>
-        </tr>
-      </thead>
-      <tbody id="leaderboard-body">
-        <tr><td colspan="3">Cargando...</td></tr>
-      </tbody>
-    </table>
+    <p id="game-status" style="margin-top: 10px; color: #f1c40f; min-height: 20px;"></p>
+    <button id="btn-reset" style="background: #7f8c8d; padding: 6px; font-size: 12px; margin-top: 15px;">Cambiar Nombres / Skin</button>
   </div>
 
   <script>
-    const SUPABASE_URL = "https://TU_PROYECTO.supabase.co";
-    const SUPABASE_ANON_KEY = "TU_SUPABASE_ANON_KEY";
+    // Variables de Juego
+    let selectedSkinColor = '#e74c3c';
+    let p1Name = 'Jugador 1';
+    let p2Name = 'Jugador 2';
+    let p1Score = 0;
+    let p2Score = 0;
+    let turn = 1; // 1 o 2
+    let isThrowing = false;
 
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
+    // Elementos DOM
     const setupCard = document.getElementById('setup-card');
     const gameCard = document.getElementById('game-card');
-    const usernameInput = document.getElementById('username');
-    const userDisplay = document.getElementById('user-display');
-    const userScore = document.getElementById('user-score');
-    const gameStatus = document.getElementById('game-status');
     const ball = document.getElementById('ball');
-    const leaderboardBody = document.getElementById('leaderboard-body');
+    const turnTxt = document.getElementById('turn-txt');
+    const gameStatus = document.getElementById('game-status');
 
-    // Generar o recuperar un ID único guardado en la memoria del navegador
-    let deviceId = localStorage.getItem('encestabol_device_id');
-    if (!deviceId) {
-      deviceId = 'user_' + Math.random().toString(36).substring(2, 9);
-      localStorage.setItem('encestabol_device_id', deviceId);
-    }
-
-    let currentUsername = localStorage.getItem('encestabol_username') || '';
-    let score = 0;
-
-    // Autologin si ya ingresó su apodo previamente
-    if (currentUsername) {
-      iniciarJuego();
+    function selectSkin(color, el) {
+      selectedSkinColor = color;
+      document.querySelectorAll('.skin-opt').forEach(opt => opt.classList.remove('selected'));
+      el.classList.add('selected');
     }
 
     document.getElementById('btn-start').onclick = () => {
-      const inputVal = usernameInput.value.trim();
-      if (!inputVal) return alert("Escribe un apodo para jugar");
-      currentUsername = inputVal;
-      localStorage.setItem('encestabol_username', currentUsername);
-      iniciarJuego();
-    };
+      p1Name = document.getElementById('p1-name').value.trim() || 'Jugador 1';
+      p2Name = document.getElementById('p2-name').value.trim() || 'Jugador 2';
+      
+      p1Score = 0;
+      p2Score = 0;
+      turn = 1;
 
-    async function iniciarJuego() {
+      ball.style.backgroundColor = selectedSkinColor;
+      
       setupCard.classList.add('hidden');
       gameCard.classList.remove('hidden');
-      userDisplay.innerText = currentUsername;
+      
+      updateUI();
+    };
 
-      // Cargar o crear perfil en Supabase usando el deviceId
-      const { data } = await supabase
-        .from('profiles')
-        .select('score')
-        .eq('id', deviceId)
-        .maybeSingle();
-
-      if (data) {
-        score = data.score || 0;
-        await supabase.from('profiles').update({ name: currentUsername }).eq('id', deviceId);
-      } else {
-        await supabase.from('profiles').insert([{ id: deviceId, name: currentUsername, score: 0 }]);
-        score = 0;
-      }
-
-      userScore.innerText = score;
-      obtenerLeaderboard();
-    }
-
-    async function obtenerLeaderboard() {
-      const { data } = await supabase
-        .from('profiles')
-        .select('name, score')
-        .order('score', { ascending: false })
-        .limit(5);
-
-      leaderboardBody.innerHTML = '';
-      if (data && data.length > 0) {
-        data.forEach((j, i) => {
-          leaderboardBody.innerHTML += `<tr><td>${i + 1}</td><td>${j.name || 'Anónimo'}</td><td>${j.score} pts</td></tr>`;
-        });
-      } else {
-        leaderboardBody.innerHTML = '<tr><td colspan="3">Sin datos</td></tr>';
-      }
+    function updateUI() {
+      document.getElementById('p1-display').innerText = `${p1Name}: ${p1Score}`;
+      document.getElementById('p2-display').innerText = `${p2Name}: ${p2Score}`;
+      turnTxt.innerText = `Turno de: ${turn === 1 ? p1Name : p2Name}`;
     }
 
     document.getElementById('btn-throw').onclick = () => {
-      ball.style.top = '300px';
-      setTimeout(() => { ball.style.top = '20px'; }, 50);
+      if (isThrowing) return;
+      isThrowing = true;
 
-      setTimeout(async () => {
-        const hit = Math.random() > 0.4;
+      // Animar Lanzamiento
+      ball.style.top = '270px';
+      setTimeout(() => { ball.style.top = '18px'; }, 50);
+
+      // Calcular si encesta (50% probabilidad)
+      setTimeout(() => {
+        const hit = Math.random() > 0.5;
+
         if (hit) {
-          score += 1;
-          userScore.innerText = score;
-          gameStatus.innerText = "¡ENCESTASTE! 🎯 +1 Punto";
+          if (turn === 1) p1Score++;
+          else p2Score++;
           
-          await supabase.from('profiles').update({ score: score, name: currentUsername }).eq('id', deviceId);
-          obtenerLeaderboard();
+          gameStatus.innerText = `🎯 ¡${turn === 1 ? p1Name : p2Name} ENCESTÓ EN LA CARTUCHERA!`;
         } else {
-          gameStatus.innerText = "¡Fallaste! Inténtalo de nuevo.";
+          gameStatus.innerText = `❌ ¡${turn === 1 ? p1Name : p2Name} falló el tiro!`;
         }
-        setTimeout(() => { ball.style.top = '300px'; }, 800);
-      }, 400);
+
+        // Cambiar turno
+        turn = turn === 1 ? 2 : 1;
+        updateUI();
+
+        // Regresar pelota
+        setTimeout(() => { 
+          ball.style.top = '270px'; 
+          isThrowing = false;
+        }, 800);
+
+      }, 450);
+    };
+
+    document.getElementById('btn-reset').onclick = () => {
+      gameCard.classList.add('hidden');
+      setupCard.classList.remove('hidden');
+      gameStatus.innerText = '';
     };
   </script>
 </body>
