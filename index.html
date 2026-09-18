@@ -1,373 +1,140 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EncestaBol Pool 8 - 1v1</title>
-  <style>
-    * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
-    body { background: #0f172a; color: #fff; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding-bottom: 20px; }
-    header { text-align: center; margin-top: 10px; }
-    .card { background: #1e293b; padding: 15px; border-radius: 12px; width: 95%; max-width: 420px; text-align: center; margin-top: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
-    input { width: 100%; padding: 10px; margin: 5px 0; border-radius: 6px; border: none; background: #334155; color: #fff; text-align: center; }
-    button { width: 100%; padding: 10px; background: #22c55e; border: none; color: #fff; font-weight: bold; border-radius: 6px; cursor: pointer; margin-top: 6px; }
-    button:disabled { background: #475569; cursor: not-allowed; }
-    .btn-secondary { background: #3b82f6; }
-    .btn-guest { background: #64748b; }
-    .hidden { display: none; }
-
-    /* Cancha de Juego */
-    #court { position: relative; width: 320px; height: 320px; background: #065f46; border: 8px solid #b45309; border-radius: 12px; margin: 10px auto; overflow: hidden; touch-action: none; }
-    .cartuchera { position: absolute; width: 70px; height: 35px; background: #d97706; border: 2px solid #fff; border-radius: 6px; left: 125px; top: 15px; text-align: center; line-height: 35px; font-size: 11px; font-weight: bold; }
-    .ball { position: absolute; width: 22px; height: 22px; border-radius: 50%; left: 149px; top: 250px; background: #ef4444; box-shadow: inset -2px -2px 5px rgba(0,0,0,0.5); }
-    
-    #aim-line { position: absolute; height: 3px; background: #facc15; transform-origin: 0 50%; display: none; pointer-events: none; }
-
-    .hud { display: flex; justify-content: space-between; background: #334155; padding: 8px 12px; border-radius: 8px; font-weight: bold; font-size: 14px; }
-    .power-bar-bg { width: 100%; height: 12px; background: #334155; border-radius: 6px; margin: 8px 0; overflow: hidden; }
-    #power-bar { width: 0%; height: 100%; background: linear-gradient(90deg, #22c55e, #ef4444); }
-
-    #chat-box { height: 60px; background: #0f172a; border-radius: 6px; overflow-y: auto; text-align: left; padding: 5px; font-size: 12px; margin-top: 8px; }
-    .shop-grid { display: flex; justify-content: space-around; margin: 8px 0; }
-    .shop-item { border: 2px solid #334155; padding: 6px; border-radius: 8px; width: 30%; cursor: pointer; font-size: 11px; }
-    .shop-item.active { border-color: #facc15; background: #334155; }
-
-    #error-msg { color: #ef4444; font-size: 12px; min-height: 15px; margin: 2px 0; }
-  </style>
-  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat por Grupos - Supabase</title>
+    <!-- Incluir la librería de Supabase -->
+    <script src="https://jsdelivr.net"></script>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; display: flex; justify-content: center; }
+        .chat-container { width: 100%; max-width: 600px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .config-section, .group-section { margin-bottom: 15px; display: flex; gap: 10px; }
+        .chat-box { height: 300px; border: 1px solid #ccc; border-radius: 4px; overflow-y: auto; padding: 10px; margin-bottom: 15px; background: #fafafa; }
+        .message { margin-bottom: 10px; padding: 6px 10px; border-radius: 4px; background: #e4e6eb; width: fit-content; max-width: 80px; }
+        .message.me { background: #0084ff; color: white; margin-left: auto; }
+        .meta { font-size: 0.8em; color: #65676b; margin-bottom: 2px; }
+        .message.me .meta { color: #e4e6eb; }
+        .input-section { display: flex; gap: 10px; }
+        input, select, button { padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+        input { flex-grow: 1; }
+        button { background: #0084ff; color: white; border: none; cursor: pointer; font-weight: bold; }
+        button:hover { background: #0066cc; }
+    </style>
 </head>
 <body>
 
-  <header>
-    <h1>🏀 EncestaBol 8-Ball</h1>
-    <p>Usuario: <span id="user-display">---</span> | 💵 $<span id="user-coins">100</span></p>
-    <button id="btn-music" style="width:auto; padding:4px 10px; font-size:11px; background:#8b5cf6;">🎵 Música: OFF</button>
-  </header>
-
-  <!-- Pantalla de Login / Invitado -->
-  <div id="auth-card" class="card">
-    <h2>Ingreso al Juego</h2>
-    <div id="auth-error" style="color:#ef4444; font-size:12px; margin-bottom:5px;"></div>
+<div class="chat-container">
+    <h2>💬 Chat en Tiempo Real</h2>
     
-    <input type="email" id="auth-email" placeholder="Correo electrónico">
-    <input type="password" id="auth-pass" placeholder="Contraseña">
-    
-    <button id="btn-login-email" class="btn-secondary">Iniciar Sesión / Registrarse</button>
-    <button id="btn-login-guest" class="btn-guest">Entrar como Invitado</button>
-  </div>
-
-  <!-- Menu Principal / Tienda -->
-  <div id="setup-card" class="card hidden">
-    <div id="error-msg"></div>
-    
-    <div class="shop-grid">
-      <div class="shop-item active" id="skin-red" onclick="selectSkin('red', 0)">🔴 Roja<br>Gratis</div>
-      <div class="shop-item" id="skin-gold" onclick="selectSkin('gold', 50)">🟡 Oro<br>$50</div>
-      <div class="shop-item" id="skin-neon" onclick="selectSkin('neon', 100)">🟢 Neón<br>$100</div>
+    <!-- Personalización de Nombre y Grupo -->
+    <div class="config-section">
+        <input type="text" id="usernameInput" value="JugadorAnonimo" placeholder="Tu Nombre">
+        <select id="roomSelect">
+            <option value="lobby">Sala General (Lobby)</option>
+            <option value="grupo1">Grupo 1 (Estrategia)</option>
+            <option value="grupo2">Grupo 2 (Acción)</option>
+        </select>
     </div>
 
-    <button id="btn-host" style="background:#f59e0b;">Crear Sala (Apuesta $20)</button>
-    <p id="host-id" style="font-size:11px; color:#facc15; word-break:break-all; margin:4px 0;"></p>
+    <!-- Caja de Mensajes -->
+    <div class="chat-box" id="chatBox"></div>
+
+    <!-- Enviar Mensaje -->
+    <div class="input-section">
+        <input type="text" id="messageInput" placeholder="Escribe un mensaje..." onkeypress="handleKeyPress(event)">
+        <button onclick="sendMessage()">Enviar</button>
+    </div>
+</div>
+
+<script>
+    // Cambia esto con tus credenciales de proyecto de Supabase
+    const SUPABASE_URL = "TU_SUPABASE_URL";
+    const SUPABASE_ANON_KEY = "TU_SUPABASE_ANON_KEY";
     
-    <input type="text" id="join-id" placeholder="ID de Sala del Rival">
-    <button id="btn-join">Unirse a Sala (Apuesta $20)</button>
-    <button id="btn-logout" class="btn-guest" style="margin-top:15px;">Cerrar Sesión</button>
-  </div>
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  <!-- Pantalla de Juego Pool -->
-  <div id="game-card" class="card hidden">
-    <div class="hud">
-      <span id="p1-txt">Tú: 0/5</span>
-      <span id="turn-txt" style="color:#facc15;">Tu Turno</span>
-      <span id="p2-txt">Rival: 0/5</span>
-    </div>
+    const chatBox = document.getElementById('chatBox');
+    const usernameInput = document.getElementById('usernameInput');
+    const roomSelect = document.getElementById('roomSelect');
+    const messageInput = document.getElementById('messageInput');
 
-    <div id="court">
-      <div class="cartuchera">🎒 Cartuchera</div>
-      <div id="aim-line"></div>
-      <div id="ball" class="ball"></div>
-    </div>
+    let currentRoom = roomSelect.value;
 
-    <div class="power-bar-bg"><div id="power-bar"></div></div>
+    // Cambiar de sala/grupo
+    roomSelect.addEventListener('change', (e) => {
+        currentRoom = e.target.value;
+        chatBox.innerHTML = ''; // Limpiar pantalla al cambiar de sala
+        loadMessages();
+    });
 
-    <button id="btn-shoot" disabled>🎯 DISPARAR</button>
-    <p id="game-status" style="color:#facc15; font-size:12px; height:15px; margin:4px 0;"></p>
+    // Cargar mensajes antiguos de la sala actual
+    async function loadMessages() {
+        const { data, error } = await supabase
+            .from('messages')
+            .select('*')
+            .eq('room', currentRoom)
+            .order('created_at', { ascending: true })
+            .limit(50);
 
-    <!-- Chat -->
-    <div id="chat-box"></div>
-    <div style="display:flex; gap:4px; margin-top:4px;">
-      <input type="text" id="chat-input" placeholder="Chat..." style="margin:0;">
-      <button id="btn-send" style="width:30%; margin:0;">Enviar</button>
-    </div>
-  </div>
-
-  <script>
-    let currentUser = null;
-    let coins = 100;
-    let inventory = ["red"];
-    let selectedSkin = 'red';
-    
-    let myScore = 0, oppScore = 0;
-    let isMyTurn = false;
-    let isCharging = false;
-    let power = 0, angle = 0;
-    let powerInterval = null;
-    let peer = null, conn = null;
-
-    // Control de Autenticación
-    document.getElementById('btn-login-email').onclick = () => {
-      const email = document.getElementById('auth-email').value.trim();
-      const pass = document.getElementById('auth-pass').value.trim();
-      
-      if (!email || !pass) {
-        document.getElementById('auth-error').innerText = "Ingresa correo y contraseña";
-        return;
-      }
-
-      const userId = 'user_' + btoa(email).replace(/=/g, '');
-      loginUser(userId, email.split('@')[0]);
-    };
-
-    document.getElementById('btn-login-guest').onclick = () => {
-      const guestId = 'guest_' + Math.floor(Math.random() * 10000);
-      loginUser(guestId, 'Invitado_' + guestId.split('_')[1]);
-    };
-
-    document.getElementById('btn-logout').onclick = () => {
-      localStorage.removeItem('eb_session');
-      location.reload();
-    };
-
-    function loginUser(id, name) {
-      currentUser = { id, name };
-      localStorage.setItem('eb_session', JSON.stringify(currentUser));
-      
-      // Cargar datos de la cuenta desde almacenamiento
-      coins = parseInt(localStorage.getItem('eb_coins_' + id) || '100');
-      inventory = JSON.parse(localStorage.getItem('eb_inv_' + id) || '["red"]');
-
-      document.getElementById('user-display').innerText = name;
-      updateCoinsUI();
-
-      document.getElementById('auth-card').classList.add('hidden');
-      document.getElementById('setup-card').classList.remove('hidden');
+        if (error) console.error('Error cargando mensajes:', error);
+        else data.forEach(msg => appendMessage(msg));
     }
 
-    // Auto-login si ya inició sesión
-    const savedSession = localStorage.getItem('eb_session');
-    if (savedSession) {
-      const session = JSON.parse(savedSession);
-      loginUser(session.id, session.name);
+    // Enviar nuevo mensaje a Supabase
+    async function sendMessage() {
+        const text = messageInput.value.trim();
+        const user = usernameInput.value.trim() || 'Anónimo';
+        
+        if (!text) return;
+
+        const { error } = await supabase
+            .from('messages')
+            .insert([{ room: currentRoom, username: user, message: text }]);
+
+        if (error) console.error('Error enviando mensaje:', error);
+        messageInput.value = '';
     }
 
-    function updateCoinsUI() {
-      document.getElementById('user-coins').innerText = coins;
-      if (currentUser) {
-        localStorage.setItem('eb_coins_' + currentUser.id, coins);
-      }
+    // Dibujar mensaje en la pantalla
+    function appendMessage(data) {
+        const isMe = data.username === usernameInput.value;
+        const msgDiv = document.createElement('div');
+        msgDiv.classList.add('message');
+        if (isMe) msgDiv.classList.add('me');
+
+        msgDiv.innerHTML = `
+            <div class="meta">${escapeHTML(data.username)}</div>
+            <div>${escapeHTML(data.message)}</div>
+        `;
+        
+        chatBox.appendChild(msgDiv);
+        chatBox.scrollTop = chatBox.scrollHeight; // Auto-scroll abajo
     }
 
-    function showErr(m) {
-      document.getElementById('error-msg').innerText = m;
-      setTimeout(() => document.getElementById('error-msg').innerText = '', 3000);
+    // Escuchar cambios en tiempo real
+    supabase
+        .channel('public:messages')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
+            if (payload.new.room === currentRoom) {
+                appendMessage(payload.new);
+            }
+        })
+        .subscribe();
+
+    // Detectar la tecla Enter para enviar
+    function handleKeyPress(e) {
+        if (e.key === 'Enter') sendMessage();
     }
 
-    // Tienda
-    function selectSkin(type, cost) {
-      if (!inventory.includes(type)) {
-        if (coins < cost) return showErr("No tienes dinero suficiente");
-        coins -= cost;
-        inventory.push(type);
-        if (currentUser) {
-          localStorage.setItem('eb_inv_' + currentUser.id, JSON.stringify(inventory));
-        }
-        updateCoinsUI();
-      }
-      selectedSkin = type;
-      document.querySelectorAll('.shop-item').forEach(i => i.classList.remove('active'));
-      document.getElementById('skin-' + type).classList.add('active');
-      
-      const colors = { red: '#ef4444', gold: '#facc15', neon: '#22c55e' };
-      document.getElementById('ball').style.background = colors[type];
+    // Evitar inyección de código (XSS)
+    function escapeHTML(str) {
+        return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
     }
 
-    // Apuntado con el Mouse / Pantalla táctil
-    const court = document.getElementById('court');
-    const aimLine = document.getElementById('aim-line');
-    const ball = document.getElementById('ball');
+    // Cargar mensajes iniciales al abrir la app
+    loadMessages();
+</script>
 
-    const handleStart = (e) => {
-      if (!isMyTurn) return;
-      isCharging = true;
-      power = 0;
-      aimLine.style.display = 'block';
-      powerInterval = setInterval(() => {
-        if (power < 100) power += 4;
-        document.getElementById('power-bar').style.width = power + '%';
-      }, 30);
-      handleMove(e);
-    };
-
-    const handleMove = (e) => {
-      if (!isCharging) return;
-      const rect = court.getBoundingClientRect();
-      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-      const dx = (clientX - rect.left) - 160;
-      const dy = (clientY - rect.top) - 261;
-      angle = Math.atan2(dy, dx);
-      
-      aimLine.style.width = '70px';
-      aimLine.style.left = '160px';
-      aimLine.style.top = '261px';
-      aimLine.style.transform = `rotate(${angle}rad)`;
-    };
-
-    const handleEnd = () => {
-      if (!isCharging) return;
-      isCharging = false;
-      clearInterval(powerInterval);
-      document.getElementById('btn-shoot').disabled = false;
-    };
-
-    court.addEventListener('mousedown', handleStart);
-    court.addEventListener('mousemove', handleMove);
-    window.addEventListener('mouseup', handleEnd);
-
-    court.addEventListener('touchstart', handleStart);
-    court.addEventListener('touchmove', handleMove);
-    window.addEventListener('touchend', handleEnd);
-
-    // Sistema de Tiro
-    document.getElementById('btn-shoot').onclick = () => {
-      if (!isMyTurn) return;
-      isMyTurn = false;
-      document.getElementById('btn-shoot').disabled = true;
-      aimLine.style.display = 'none';
-
-      const hit = Math.abs(angle + 1.57) < 0.3 && power > 45 && power < 85;
-
-      ball.style.transition = 'all 0.4s ease-out';
-      ball.style.top = hit ? '20px' : '70px';
-
-      setTimeout(() => {
-        if (hit) {
-          myScore++;
-          document.getElementById('game-status').innerText = "¡ENCESTASTE!";
-        } else {
-          document.getElementById('game-status').innerText = "¡FALLASTE!";
-        }
-
-        updateHUD();
-        conn.send({ type: 'SHOOT', score: myScore, hit: hit });
-
-        if (myScore >= 5) {
-          coins += 40;
-          updateCoinsUI();
-          document.getElementById('game-status').innerText = "🏆 ¡GANASTE EL JUEGO +$40!";
-          setTimeout(() => location.reload(), 2500);
-          return;
-        }
-
-        setTimeout(() => {
-          ball.style.top = '250px';
-          document.getElementById('power-bar').style.width = '0%';
-        }, 600);
-      }, 400);
-    };
-
-    // Conexión P2P
-    document.getElementById('btn-host').onclick = () => {
-      if (coins < 20) return showErr("Necesitas $20 para apostar");
-      
-      coins -= 20;
-      updateCoinsUI();
-
-      peer = new Peer();
-      peer.on('open', id => {
-        document.getElementById('host-id').innerText = "ID de Sala: " + id;
-      });
-      peer.on('connection', c => { conn = c; isMyTurn = true; initGame(); });
-    };
-
-    document.getElementById('btn-join').onclick = () => {
-      if (coins < 20) return showErr("Necesitas $20 para apostar");
-      const id = document.getElementById('join-id').value;
-      if (!id) return showErr("Ingresa un ID válido");
-
-      coins -= 20;
-      updateCoinsUI();
-
-      peer = new Peer();
-      peer.on('open', () => {
-        conn = peer.connect(id);
-        isMyTurn = false;
-        initGame();
-      });
-    };
-
-    function initGame() {
-      document.getElementById('setup-card').classList.add('hidden');
-      document.getElementById('game-card').classList.remove('hidden');
-
-      conn.on('data', data => {
-        if (data.type === 'SHOOT') {
-          oppScore = data.score;
-          document.getElementById('game-status').innerText = data.hit ? "Rival encestó" : "Rival falló";
-          updateHUD();
-          
-          if (oppScore >= 5) {
-            document.getElementById('game-status').innerText = "❌ PERDISTE LA PARTIDA";
-            setTimeout(() => location.reload(), 2500);
-            return;
-          }
-
-          isMyTurn = true;
-          updateHUD();
-        } else if (data.type === 'CHAT') {
-          addChat(data.user, data.msg);
-        }
-      });
-      updateHUD();
-    }
-
-    function updateHUD() {
-      document.getElementById('p1-txt').innerText = `Tú: ${myScore}/5`;
-      document.getElementById('p2-txt').innerText = `Rival: ${oppScore}/5`;
-      document.getElementById('turn-txt').innerText = isMyTurn ? "Tu Turno" : "Turno Rival";
-    }
-
-    // Chat
-    document.getElementById('btn-send').onclick = () => {
-      const msg = document.getElementById('chat-input').value;
-      if (!msg) return;
-      addChat("Tú", msg);
-      conn.send({ type: 'CHAT', user: currentUser.name, msg: msg });
-      document.getElementById('chat-input').value = '';
-    };
-
-    function addChat(usr, msg) {
-      const box = document.getElementById('chat-box');
-      box.innerHTML += `<div><b>${usr}:</b> ${msg}</div>`;
-      box.scrollTop = box.scrollHeight;
-    }
-
-    // Música
-    let audioCtx = null, isMusic = false, musicInt = null;
-    document.getElementById('btn-music').onclick = () => {
-      isMusic = !isMusic;
-      document.getElementById('btn-music').innerText = isMusic ? "🎵 Música: ON" : "🎵 Música: OFF";
-      if (isMusic) {
-        if (!audioCtx) audioCtx = new AudioContext();
-        const notes = [220, 277, 329, 440]; let i = 0;
-        musicInt = setInterval(() => {
-          let osc = audioCtx.createOscillator(), g = audioCtx.createGain();
-          osc.frequency.value = notes[i++ % notes.length];
-          g.gain.value = 0.02; osc.connect(g); g.connect(audioCtx.destination);
-          osc.start(); osc.stop(audioCtx.currentTime + 0.1);
-        }, 300);
-      } else clearInterval(musicInt);
-    };
-  </script>
 </body>
 </html>
